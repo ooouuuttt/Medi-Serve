@@ -22,10 +22,21 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { PlusCircle, Search } from "lucide-react";
 import type { Medicine } from "@/lib/types";
+import { AddMedicineForm } from "./add-medicine-form";
 
 export function StockTable({ data }: { data: Medicine[] }) {
   const [medicines, setMedicines] = React.useState(data);
   const [filter, setFilter] = React.useState("");
+  const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
+
+  const handleAddMedicine = (newMedicine: Omit<Medicine, 'id'>) => {
+    const newMed: Medicine = {
+      ...newMedicine,
+      id: `med${medicines.length + 100}` // temporary unique id
+    };
+    setMedicines(prev => [newMed, ...prev]);
+    setIsAddDialogOpen(false);
+  };
 
   const getStockStatus = (med: Medicine) => {
     if (med.quantity <= 0) {
@@ -55,7 +66,7 @@ export function StockTable({ data }: { data: Medicine[] }) {
             className="pl-10"
           />
         </div>
-        <Dialog>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <PlusCircle className="mr-2 h-4 w-4" /> Add Medicine
@@ -68,8 +79,7 @@ export function StockTable({ data }: { data: Medicine[] }) {
                 Fill in the details to add a new medicine to your inventory.
               </DialogDescription>
             </DialogHeader>
-            {/* Add Medicine Form would go here */}
-            <p className="text-center text-muted-foreground py-8">Add new medicine form placeholder.</p>
+            <AddMedicineForm onAddMedicine={handleAddMedicine} />
           </DialogContent>
         </Dialog>
       </div>
@@ -93,7 +103,7 @@ export function StockTable({ data }: { data: Medicine[] }) {
                   <TableCell>{med.brand}</TableCell>
                   <TableCell>{med.quantity}</TableCell>
                   <TableCell>{new Date(med.expiryDate).toLocaleDateString()}</TableCell>
-                  <TableCell>${med.price.toFixed(2)}</TableCell>
+                  <TableCell>₹{med.price.toFixed(2)}</TableCell>
                   <TableCell>{getStockStatus(med)}</TableCell>
                 </TableRow>
               ))
