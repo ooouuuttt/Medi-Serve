@@ -23,10 +23,11 @@ export type Prescription = {
 
 export type Notification = {
   id: string;
-  type: "low-stock" | "expiry" | "new-prescription";
+  type: "low-stock" | "expiry" | "new-prescription" | "appointment" | "prescription-update";
   message: string;
   date: string;
   isRead: boolean;
+  userType?: "patient" | "doctor" | "pharmacist";
 };
 
 export type SalesData = {
@@ -41,4 +42,42 @@ export type PrescriptionTrendData = {
   doctorSpecialty: string;
   frequency: number;
   date: string;
+};
+
+export type Doctor = {
+  id: string;
+  name: string;
+  specialty: string;
+  bio: string;
+};
+
+export type Appointment = {
+  id: string;
+  patientName: string;
+  doctorName: string;
+  date: string;
+  status: "Confirmed" | "Pending" | "Cancelled";
+};
+
+export type PatientRecord = {
+  patientId: string;
+  patientName: string;
+  age: number;
+  bloodType: string;
+  allergies: string[];
+  vitals: {
+    type: string;
+    value: string;
+  }[];
+  prescriptions: {
+    medicine: string;
+    dosage: string;
+    doctor: string;
+    date: string;
+  }[];
+  documents: {
+    name: string;
+    type: string;
+    date: string;
+  }[];
 };

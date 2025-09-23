@@ -11,37 +11,54 @@ import {
   Bell,
   Pill,
   User,
+  Calendar,
+  HeartPulse,
+  Stethoscope,
+  Microscope,
 } from "lucide-react";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/stock", label: "Stock", icon: Package },
-  { href: "/dashboard/prescriptions", label: "Prescriptions", icon: ClipboardType },
-  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
-  { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
-  { href: "/dashboard/profile", label: "Profile", icon: User },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, section: "General" },
+  { href: "/dashboard/appointments", label: "Appointments", icon: Calendar, section: "Patient" },
+  { href: "/dashboard/symptom-checker", label: "Symptom Checker", icon: Microscope, section: "Patient" },
+  { href: "/dashboard/health-records", label: "Health Records", icon: HeartPulse, section: "Patient" },
+  { href: "/dashboard/doctors", label: "Doctors", icon: Stethoscope, section: "Patient" },
+  { href: "/dashboard/stock", label: "Stock", icon: Package, section: "Pharmacy" },
+  { href: "/dashboard/prescriptions", label: "Prescriptions", icon: ClipboardType, section: "Pharmacy" },
+  { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3, section: "Pharmacy" },
+  { href: "/dashboard/notifications", label: "Notifications", icon: Bell, section: "General" },
+  { href: "/dashboard/profile", label: "Profile", icon: User, section: "General" },
 ];
+
+const sections = ["Patient", "Pharmacy", "General"];
 
 export function Sidebar() {
   const pathname = usePathname();
 
   return (
     <aside className="hidden w-64 flex-col border-r bg-card p-4 md:flex">
-      <div className="flex items-center gap-2 mb-8">
+      <div className="flex items-center gap-2 mb-6">
         <Pill className="h-8 w-8 text-primary" />
         <h1 className="text-2xl font-bold tracking-tight">MediServe</h1>
       </div>
-      <nav className="flex flex-col gap-2">
-        {navItems.map((item) => (
-          <Link key={item.href} href={item.href} passHref>
-            <Button
-              variant={pathname === item.href ? "secondary" : "ghost"}
-              className="w-full justify-start gap-3 text-base h-11"
-            >
-              <item.icon className="h-5 w-5" />
-              <span>{item.label}</span>
-            </Button>
-          </Link>
+      <nav className="flex flex-col gap-4">
+        {sections.map(section => (
+            <div key={section}>
+                <h2 className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">{section}</h2>
+                <div className="flex flex-col gap-1">
+                    {navItems.filter(item => item.section === section).map((item) => (
+                    <Link key={item.href} href={item.href} passHref>
+                        <Button
+                        variant={pathname === item.href ? "secondary" : "ghost"}
+                        className="w-full justify-start gap-3 text-base h-11"
+                        >
+                        <item.icon className="h-5 w-5" />
+                        <span>{item.label}</span>
+                        </Button>
+                    </Link>
+                    ))}
+                </div>
+            </div>
         ))}
       </nav>
     </aside>
