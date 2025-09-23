@@ -50,8 +50,6 @@ export const notifications: Notification[] = [
   { id: 'notif2', type: 'expiry', message: 'Metformin (Glucophage) is expiring soon on 2024-09-20.', date: '2024-07-20', isRead: false },
   { id: 'notif3', type: 'new-prescription', message: 'New prescription received from Dr. Miller for Diana Prince.', date: '2024-07-21', isRead: false },
   { id: 'notif4', type: 'low-stock', message: 'Metformin (Glucophage) is out of stock.', date: '2024-07-18', isRead: true },
-  { id: 'notif5', type: 'appointment', message: 'Your appointment with Dr. Davis is confirmed for tomorrow at 10:00 AM.', date: '2024-07-24', isRead: false, userType: 'patient' },
-  { id: 'notif6', type: 'prescription-update', message: 'Patient Alice Johnson has picked up their prescription.', date: '2024-07-24', isRead: true, userType: 'doctor' },
 ];
 
 export const salesData: SalesData[] = [
@@ -72,6 +70,7 @@ export const prescriptionTrendData: PrescriptionTrendData[] = [
     {"medicineName": "Lisinopril", "doctorSpecialty": "Cardiologist", "frequency": 180, "date": "2024-05-01"},
 ];
 
+// The following data is kept for type-checking but is not displayed in the UI to maintain privacy.
 export const doctors: Doctor[] = [
     { id: 'doc1', name: 'Dr. Evelyn Reed', specialty: 'Cardiologist', bio: 'Expert in heart-related conditions with over 15 years of experience.' },
     { id: 'doc2', name: 'Dr. Marcus Chen', specialty: 'Pediatrician', bio: 'Dedicated to providing the best care for children of all ages.' },

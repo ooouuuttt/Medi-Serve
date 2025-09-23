@@ -11,18 +11,10 @@ import {
   Bell,
   Pill,
   User,
-  Calendar,
-  HeartPulse,
-  Stethoscope,
-  Microscope,
 } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, section: "General" },
-  { href: "/dashboard/appointments", label: "Appointments", icon: Calendar, section: "Patient" },
-  { href: "/dashboard/symptom-checker", label: "Symptom Checker", icon: Microscope, section: "Patient" },
-  { href: "/dashboard/health-records", label: "Health Records", icon: HeartPulse, section: "Patient" },
-  { href: "/dashboard/doctors", label: "Doctors", icon: Stethoscope, section: "Patient" },
   { href: "/dashboard/stock", label: "Stock", icon: Package, section: "Pharmacy" },
   { href: "/dashboard/prescriptions", label: "Prescriptions", icon: ClipboardType, section: "Pharmacy" },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3, section: "Pharmacy" },
@@ -30,7 +22,7 @@ const navItems = [
   { href: "/dashboard/profile", label: "Profile", icon: User, section: "General" },
 ];
 
-const sections = ["Patient", "Pharmacy", "General"];
+const sections = ["General", "Pharmacy"];
 
 export function Sidebar() {
   const pathname = usePathname();

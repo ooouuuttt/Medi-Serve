@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell, LifeBuoy, LogOut, Menu, User, Pill, LayoutDashboard, Package, ClipboardType, BarChart3, HeartPulse, Stethoscope, Calendar, Microscope } from "lucide-react";
+import { Bell, LifeBuoy, LogOut, Menu, User, Pill, LayoutDashboard, Package, ClipboardType, BarChart3 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -19,10 +19,6 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/dashboard/appointments", label: "Appointments", icon: Calendar },
-  { href: "/dashboard/symptom-checker", label: "Symptom Checker", icon: Microscope },
-  { href: "/dashboard/health-records", label: "Health Records", icon: HeartPulse },
-  { href: "/dashboard/doctors", label: "Doctors", icon: Stethoscope },
   { href: "/dashboard/stock", label: "Stock", icon: Package },
   { href: "/dashboard/prescriptions", label: "Prescriptions", icon: ClipboardType },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
@@ -32,10 +28,6 @@ const navItems = [
 
 const pageTitles: { [key: string]: string } = {
     '/dashboard': 'Dashboard',
-    '/dashboard/appointments': 'Appointments',
-    '/dashboard/symptom-checker': 'AI Symptom Checker',
-    '/dashboard/health-records': 'Patient Health Records',
-    '/dashboard/doctors': 'Our Doctors',
     '/dashboard/stock': 'Stock Management',
     '/dashboard/prescriptions': 'Prescription Handling',
     '/dashboard/analytics': 'Analytics & Reports',

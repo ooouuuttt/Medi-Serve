@@ -23,11 +23,10 @@ export type Prescription = {
 
 export type Notification = {
   id: string;
-  type: "low-stock" | "expiry" | "new-prescription" | "appointment" | "prescription-update";
+  type: "low-stock" | "expiry" | "new-prescription";
   message: string;
   date: string;
   isRead: boolean;
-  userType?: "patient" | "doctor" | "pharmacist";
 };
 
 export type SalesData = {
@@ -43,6 +42,9 @@ export type PrescriptionTrendData = {
   frequency: number;
   date: string;
 };
+
+// The following types are defined for data structure purposes but are not used to display
+// sensitive patient or doctor information in the pharmacy's UI.
 
 export type Doctor = {
   id: string;

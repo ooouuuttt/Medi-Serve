@@ -3,4 +3,3 @@ config();
 
 import '@/ai/flows/sales-trend-analyzer.ts';
 import '@/ai/flows/patient-update-generator.ts';
-import '@/ai/flows/symptom-checker.ts';
