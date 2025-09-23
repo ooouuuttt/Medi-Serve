@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell, LifeBuoy, LogOut, Menu, User, Pill, LayoutDashboard, Package, ClipboardText, BarChart3 } from "lucide-react";
+import { Bell, LifeBuoy, LogOut, Menu, User, Pill, LayoutDashboard, Package, ClipboardType, BarChart3 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/stock", label: "Stock", icon: Package },
-  { href: "/dashboard/prescriptions", label: "Prescriptions", icon: ClipboardText },
+  { href: "/dashboard/prescriptions", label: "Prescriptions", icon: ClipboardType },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
 ];

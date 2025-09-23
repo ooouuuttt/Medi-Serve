@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   LayoutDashboard,
   Package,
-  ClipboardText,
+  ClipboardType,
   BarChart3,
   Bell,
   Pill,
@@ -15,7 +15,7 @@ import {
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/dashboard/stock", label: "Stock", icon: Package },
-  { href: "/dashboard/prescriptions", label: "Prescriptions", icon: ClipboardText },
+  { href: "/dashboard/prescriptions", label: "Prescriptions", icon: ClipboardType },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
 ];

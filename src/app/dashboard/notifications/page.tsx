@@ -1,6 +1,6 @@
 import { notifications } from "@/lib/data";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Bell, AlertTriangle, ClipboardText } from "lucide-react";
+import { Bell, AlertTriangle, ClipboardType } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function NotificationsPage() {
@@ -26,7 +26,7 @@ export default function NotificationsPage() {
                                 )}>
                                     {n.type === "low-stock" && <AlertTriangle className="h-5 w-5 text-orange-600" />}
                                     {n.type === "expiry" && <Bell className="h-5 w-5 text-red-600" />}
-                                    {n.type === "new-prescription" && <ClipboardText className="h-5 w-5 text-blue-600" />}
+                                    {n.type === "new-prescription" && <ClipboardType className="h-5 w-5 text-blue-600" />}
                                 </div>
                                 <div className="flex-1 grid gap-1">
                                     <p className={cn("font-medium", !n.isRead && "text-foreground")}>{n.message}</p>

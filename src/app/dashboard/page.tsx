@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { medicines, prescriptions, notifications } from "@/lib/data";
 import Link from "next/link";
-import { ArrowUpRight, Package, ClipboardText, Bell, AlertCircle, AlertTriangle } from "lucide-react";
+import { ArrowUpRight, Package, ClipboardType, Bell, AlertCircle, AlertTriangle } from "lucide-react";
 import type { Medicine } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
@@ -55,7 +55,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">New Prescriptions</CardTitle>
-            <ClipboardText className="h-4 w-4 text-muted-foreground" />
+            <ClipboardType className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">+{newPrescriptions.length}</div>
@@ -120,7 +120,7 @@ export default function DashboardPage() {
                 )}>
                     {n.type === "low-stock" && <AlertTriangle className="h-5 w-5 text-orange-600" />}
                     {n.type === "expiry" && <Bell className="h-5 w-5 text-red-600" />}
-                    {n.type === "new-prescription" && <ClipboardText className="h-5 w-5 text-blue-600" />}
+                    {n.type === "new-prescription" && <ClipboardType className="h-5 w-5 text-blue-600" />}
                 </div>
                 <div className="grid gap-1">
                   <p className="text-sm font-medium">{n.message}</p>
