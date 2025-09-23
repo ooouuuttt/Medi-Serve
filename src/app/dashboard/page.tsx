@@ -1,0 +1,136 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { medicines, prescriptions, notifications } from "@/lib/data";
+import Link from "next/link";
+import { ArrowUpRight, Package, ClipboardText, Bell, AlertCircle, AlertTriangle } from "lucide-react";
+import type { Medicine } from "@/lib/types";
+import { cn } from "@/lib/utils";
+
+export default function DashboardPage() {
+  const stockSummary = medicines.reduce((acc, med) => {
+    if (med.quantity === 0) acc.outOfStock += 1;
+    else if (med.quantity < med.lowStockThreshold) acc.lowStock += 1;
+    else acc.inStock += 1;
+    return acc;
+  }, { inStock: 0, lowStock: 0, outOfStock: 0 });
+
+  const newPrescriptions = prescriptions.filter(p => p.status === 'Pending');
+  const unreadNotifications = notifications.filter(n => !n.isRead);
+
+  return (
+    <div className="grid gap-6">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">In Stock</CardTitle>
+            <Package className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stockSummary.inStock}</div>
+            <p className="text-xs text-muted-foreground">Medicine types in stock</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-orange-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stockSummary.lowStock}</div>
+            <p className="text-xs text-muted-foreground">Items below threshold</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Out of Stock</CardTitle>
+            <AlertCircle className="h-4 w-4 text-red-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stockSummary.outOfStock}</div>
+            <p className="text-xs text-muted-foreground">Items completely out of stock</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">New Prescriptions</CardTitle>
+            <ClipboardText className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">+{newPrescriptions.length}</div>
+            <p className="text-xs text-muted-foreground">Awaiting fulfillment</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card>
+          <CardHeader className="flex flex-row items-center">
+            <CardTitle>New Prescriptions</CardTitle>
+            <Button asChild size="sm" className="ml-auto gap-1" variant="outline">
+              <Link href="/dashboard/prescriptions">
+                View All
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Patient</TableHead>
+                  <TableHead className="hidden sm:table-cell">Doctor</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {newPrescriptions.slice(0, 5).map((p) => (
+                  <TableRow key={p.id}>
+                    <TableCell>
+                      <div className="font-medium">{p.patientName}</div>
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">{p.doctorName}</TableCell>
+                    <TableCell>
+                      <Badge variant="secondary">{p.status}</Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center">
+             <CardTitle>Notifications</CardTitle>
+            <Button asChild size="sm" className="ml-auto gap-1" variant="outline">
+              <Link href="/dashboard/notifications">
+                View All
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="grid gap-4">
+            {unreadNotifications.length > 0 ? unreadNotifications.slice(0, 4).map((n) => (
+              <div key={n.id} className="flex items-start gap-4">
+                <div className={cn("rounded-full p-2 mt-1", 
+                    n.type === 'low-stock' && 'bg-orange-100',
+                    n.type === 'expiry' && 'bg-red-100',
+                    n.type === 'new-prescription' && 'bg-blue-100'
+                )}>
+                    {n.type === "low-stock" && <AlertTriangle className="h-5 w-5 text-orange-600" />}
+                    {n.type === "expiry" && <Bell className="h-5 w-5 text-red-600" />}
+                    {n.type === "new-prescription" && <ClipboardText className="h-5 w-5 text-blue-600" />}
+                </div>
+                <div className="grid gap-1">
+                  <p className="text-sm font-medium">{n.message}</p>
+                  <p className="text-sm text-muted-foreground">{new Date(n.date).toLocaleDateString()}</p>
+                </div>
+              </div>
+            )) : <p className="text-sm text-muted-foreground text-center py-4">No new notifications.</p>}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}

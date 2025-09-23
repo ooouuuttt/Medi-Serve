@@ -1,3 +1,16 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "auth-background",
+      "description": "Abstract medical background with soft blue tones.",
+      "imageUrl": "https://images.unsplash.com/photo-1579781354147-e863d998e97f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxtZWRpY2FsJTIwYWJzdHJhY3R8ZW58MHx8fHwxNzU4NjE5NTk5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "medical abstract"
+    },
+    {
+      "id": "user-avatar",
+      "description": "Avatar for a medical owner.",
+      "imageUrl": "https://images.unsplash.com/photo-1750535135704-f9a5dba67e46?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxwZXJzb24lMjBhdmF0YXJ8ZW58MHx8fHwxNzU4NTgyNDgyfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person avatar"
+    }
+  ]
 }
