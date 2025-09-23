@@ -29,9 +29,10 @@ const formSchema = z.object({
 
 type AddMedicineFormProps = {
     onAddMedicine: (medicine: Omit<Medicine, 'id'>) => void;
+    onFinished: () => void;
 }
 
-export function AddMedicineForm({ onAddMedicine }: AddMedicineFormProps) {
+export function AddMedicineForm({ onAddMedicine, onFinished }: AddMedicineFormProps) {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -59,6 +60,7 @@ export function AddMedicineForm({ onAddMedicine }: AddMedicineFormProps) {
       });
       setIsLoading(false);
       form.reset();
+      onFinished();
     }, 1000);
   }
 

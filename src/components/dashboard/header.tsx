@@ -23,6 +23,7 @@ const navItems = [
   { href: "/dashboard/prescriptions", label: "Prescriptions", icon: ClipboardType },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
+  { href: "/dashboard/profile", label: "Profile", icon: User },
 ];
 
 const pageTitles: { [key: string]: string } = {
@@ -31,6 +32,7 @@ const pageTitles: { [key: string]: string } = {
     '/dashboard/prescriptions': 'Prescription Handling',
     '/dashboard/analytics': 'Analytics & Reports',
     '/dashboard/notifications': 'Notifications',
+    '/dashboard/profile': 'User Profile',
 }
 
 
@@ -89,9 +91,11 @@ export function Header() {
           <DropdownMenuContent align="end" className="w-56">
             <DropdownMenuLabel>Medico Owner</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <User className="mr-2 h-4 w-4" />
-              <span>Profile</span>
+            <DropdownMenuItem asChild>
+              <Link href="/dashboard/profile">
+                <User className="mr-2 h-4 w-4" />
+                <span>Profile</span>
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem>
               <LifeBuoy className="mr-2 h-4 w-4" />

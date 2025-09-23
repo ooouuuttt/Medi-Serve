@@ -1,14 +1,17 @@
+"use client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { medicines, prescriptions, notifications } from "@/lib/data";
+import { prescriptions, notifications } from "@/lib/data";
 import Link from "next/link";
 import { ArrowUpRight, Package, ClipboardType, Bell, AlertCircle, AlertTriangle } from "lucide-react";
-import type { Medicine } from "@/lib/types";
 import { cn } from "@/lib/utils";
+import { useDashboard } from "@/context/dashboard-context";
 
 export default function DashboardPage() {
+  const { medicines } = useDashboard();
   const stockSummary = medicines.reduce((acc, med) => {
     if (med.quantity === 0) acc.outOfStock += 1;
     else if (med.quantity < med.lowStockThreshold) acc.lowStock += 1;

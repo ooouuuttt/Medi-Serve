@@ -24,19 +24,14 @@ import { PlusCircle, Search } from "lucide-react";
 import type { Medicine } from "@/lib/types";
 import { AddMedicineForm } from "./add-medicine-form";
 
-export function StockTable({ data }: { data: Medicine[] }) {
-  const [medicines, setMedicines] = React.useState(data);
+type StockTableProps = {
+    data: Medicine[];
+    onAddMedicine: (medicine: Omit<Medicine, 'id'>) => void;
+}
+
+export function StockTable({ data, onAddMedicine }: StockTableProps) {
   const [filter, setFilter] = React.useState("");
   const [isAddDialogOpen, setIsAddDialogOpen] = React.useState(false);
-
-  const handleAddMedicine = (newMedicine: Omit<Medicine, 'id'>) => {
-    const newMed: Medicine = {
-      ...newMedicine,
-      id: `med${medicines.length + 100}` // temporary unique id
-    };
-    setMedicines(prev => [newMed, ...prev]);
-    setIsAddDialogOpen(false);
-  };
 
   const getStockStatus = (med: Medicine) => {
     if (med.quantity <= 0) {
@@ -48,7 +43,7 @@ export function StockTable({ data }: { data: Medicine[] }) {
     return <Badge variant="outline">In Stock</Badge>;
   };
 
-  const filteredMedicines = medicines.filter(
+  const filteredMedicines = data.filter(
     (med) =>
       med.name.toLowerCase().includes(filter.toLowerCase()) ||
       med.brand.toLowerCase().includes(filter.toLowerCase())
@@ -79,7 +74,7 @@ export function StockTable({ data }: { data: Medicine[] }) {
                 Fill in the details to add a new medicine to your inventory.
               </DialogDescription>
             </DialogHeader>
-            <AddMedicineForm onAddMedicine={handleAddMedicine} />
+            <AddMedicineForm onAddMedicine={onAddMedicine} onFinished={() => setIsAddDialogOpen(false)} />
           </DialogContent>
         </Dialog>
       </div>

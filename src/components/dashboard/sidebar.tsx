@@ -10,6 +10,7 @@ import {
   BarChart3,
   Bell,
   Pill,
+  User,
 } from "lucide-react";
 
 const navItems = [
@@ -18,6 +19,7 @@ const navItems = [
   { href: "/dashboard/prescriptions", label: "Prescriptions", icon: ClipboardType },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3 },
   { href: "/dashboard/notifications", label: "Notifications", icon: Bell },
+  { href: "/dashboard/profile", label: "Profile", icon: User },
 ];
 
 export function Sidebar() {
