@@ -17,6 +17,7 @@ export type Prescription = {
     medicineId: string;
     name: string;
     dosage: string;
+    quantity: number;
   }[];
   status: "Pending" | "Ready for Pickup" | "Completed" | "Out of Stock";
 };

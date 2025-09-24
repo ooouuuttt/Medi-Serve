@@ -16,7 +16,10 @@ export const prescriptions: Prescription[] = [
     patientName: 'Alice Johnson',
     doctorName: 'Dr. Smith',
     date: '2024-07-20',
-    medicines: [{ medicineId: 'med1', name: 'Paracetamol', dosage: '500mg, twice a day' }, { medicineId: 'med7', name: 'Cetirizine', dosage: '10mg, once a day' }],
+    medicines: [
+        { medicineId: 'med1', name: 'Paracetamol', dosage: '500mg, twice a day', quantity: 10 },
+        { medicineId: 'med7', name: 'Cetirizine', dosage: '10mg, once a day', quantity: 5 }
+    ],
     status: 'Pending',
   },
   {
@@ -24,7 +27,7 @@ export const prescriptions: Prescription[] = [
     patientName: 'Bob Williams',
     doctorName: 'Dr. Jones',
     date: '2024-07-19',
-    medicines: [{ medicineId: 'med3', name: 'Amoxicillin', dosage: '250mg, three times a day' }],
+    medicines: [{ medicineId: 'med3', name: 'Amoxicillin', dosage: '250mg, three times a day', quantity: 15 }],
     status: 'Ready for Pickup',
   },
   {
@@ -32,7 +35,7 @@ export const prescriptions: Prescription[] = [
     patientName: 'Charlie Brown',
     doctorName: 'Dr. Davis',
     date: '2024-07-18',
-    medicines: [{ medicineId: 'med5', name: 'Metformin', dosage: '500mg, twice daily' }],
+    medicines: [{ medicineId: 'med5', name: 'Metformin', dosage: '500mg, twice daily', quantity: 30 }],
     status: 'Completed',
   },
   {
@@ -40,7 +43,7 @@ export const prescriptions: Prescription[] = [
     patientName: 'Diana Prince',
     doctorName: 'Dr. Miller',
     date: '2024-07-21',
-    medicines: [{ medicineId: 'med99', name: 'Ozempic', dosage: '1mg/week' }],
+    medicines: [{ medicineId: 'med99', name: 'Ozempic', dosage: '1mg/week', quantity: 1 }],
     status: 'Pending',
   },
 ];

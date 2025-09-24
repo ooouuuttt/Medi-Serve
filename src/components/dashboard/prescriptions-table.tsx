@@ -72,7 +72,7 @@ export function PrescriptionsTable({ data }: { data: Prescription[] }) {
     const initialStatuses: Record<string, MedicineStatus> = {};
     prescription.medicines.forEach(med => {
         const stockItem = stock.find(s => s.id === med.medicineId);
-        if (stockItem && stockItem.quantity > 0) {
+        if (stockItem && stockItem.quantity >= med.quantity) {
             initialStatuses[med.medicineId] = "packaged";
         } else {
             initialStatuses[med.medicineId] = "out-of-stock";
@@ -95,8 +95,7 @@ export function PrescriptionsTable({ data }: { data: Prescription[] }) {
     if (!selectedPrescription) return 0;
     return selectedPrescription.medicines.reduce((total, med) => {
         if (medicineStatuses[med.medicineId] === "packaged") {
-            // Assuming quantity is 1 for each prescribed medicine, as it's not specified in the prescription data
-            return total + getPriceForMedicine(med.medicineId);
+            return total + (getPriceForMedicine(med.medicineId) * med.quantity);
         }
         return total;
     }, 0);
@@ -193,6 +192,7 @@ export function PrescriptionsTable({ data }: { data: Prescription[] }) {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Medicine</TableHead>
+                                <TableHead>Quantity</TableHead>
                                 <TableHead>Price</TableHead>
                                 <TableHead className="text-right">Status</TableHead>
                             </TableRow>
@@ -204,6 +204,7 @@ export function PrescriptionsTable({ data }: { data: Prescription[] }) {
                                         <div className="font-medium">{med.name}</div>
                                         <div className="text-sm text-muted-foreground">{med.dosage}</div>
                                     </TableCell>
+                                    <TableCell>{med.quantity}</TableCell>
                                     <TableCell>₹{getPriceForMedicine(med.medicineId).toFixed(2)}</TableCell>
                                     <TableCell className="text-right">
                                         <RadioGroup 
@@ -242,5 +243,3 @@ export function PrescriptionsTable({ data }: { data: Prescription[] }) {
     </div>
   );
 }
-
-  
