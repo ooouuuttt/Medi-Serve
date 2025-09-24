@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -24,16 +25,26 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { MoreHorizontal, Bot } from "lucide-react";
+import { MoreHorizontal, Bot, Send } from "lucide-react";
 import type { Prescription } from "@/lib/types";
 import { PatientUpdateTool } from "./patient-update-tool";
+import { useDashboard } from "@/context/dashboard-context";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+
+type MedicineStatus = "packaged" | "out-of-stock" | "unavailable";
 
 export function PrescriptionsTable({ data }: { data: Prescription[] }) {
+  const { medicines: stock } = useDashboard();
   const [prescriptions, setPrescriptions] = React.useState(data);
   const [selectedPrescription, setSelectedPrescription] = React.useState<Prescription | null>(null);
+  const [isAiUpdateOpen, setIsAiUpdateOpen] = React.useState(false);
+  const [isDetailOpen, setIsDetailOpen] = React.useState(false);
+  const [medicineStatuses, setMedicineStatuses] = React.useState<Record<string, MedicineStatus>>({});
 
   const handleStatusChange = (id: string, status: Prescription["status"]) => {
     setPrescriptions((prev) =>
@@ -56,6 +67,41 @@ export function PrescriptionsTable({ data }: { data: Prescription[] }) {
     }
   };
 
+  const handleRowClick = (prescription: Prescription) => {
+    setSelectedPrescription(prescription);
+    const initialStatuses: Record<string, MedicineStatus> = {};
+    prescription.medicines.forEach(med => {
+        const stockItem = stock.find(s => s.id === med.medicineId);
+        if (stockItem && stockItem.quantity > 0) {
+            initialStatuses[med.medicineId] = "packaged";
+        } else {
+            initialStatuses[med.medicineId] = "out-of-stock";
+        }
+    });
+    setMedicineStatuses(initialStatuses);
+    setIsDetailOpen(true);
+  };
+
+  const handleMedicineStatusChange = (medicineId: string, status: MedicineStatus) => {
+    setMedicineStatuses(prev => ({ ...prev, [medicineId]: status }));
+  };
+
+  const getPriceForMedicine = (medicineId: string) => {
+      const medicine = stock.find(m => m.id === medicineId);
+      return medicine ? medicine.price : 0;
+  }
+
+  const calculateTotal = () => {
+    if (!selectedPrescription) return 0;
+    return selectedPrescription.medicines.reduce((total, med) => {
+        if (medicineStatuses[med.medicineId] === "packaged") {
+            // Assuming quantity is 1 for each prescribed medicine, as it's not specified in the prescription data
+            return total + getPriceForMedicine(med.medicineId);
+        }
+        return total;
+    }, 0);
+  }
+
   return (
     <div className="w-full">
       <div className="rounded-md border bg-card">
@@ -73,14 +119,14 @@ export function PrescriptionsTable({ data }: { data: Prescription[] }) {
           <TableBody>
             {prescriptions.length ? (
               prescriptions.map((p) => (
-                <TableRow key={p.id}>
+                <TableRow key={p.id} onClick={() => handleRowClick(p)} className="cursor-pointer">
                   <TableCell className="font-medium">{p.patientName}</TableCell>
                   <TableCell>{p.doctorName}</TableCell>
                   <TableCell>{new Date(p.date).toLocaleDateString()}</TableCell>
                   <TableCell>{getStatusBadge(p.status)}</TableCell>
                   <TableCell>{p.medicines.map(m => m.name).join(', ')}</TableCell>
-                  <TableCell className="text-right">
-                    <Dialog open={selectedPrescription?.id === p.id} onOpenChange={(isOpen) => !isOpen && setSelectedPrescription(null)}>
+                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                    <Dialog open={isAiUpdateOpen && selectedPrescription?.id === p.id} onOpenChange={setIsAiUpdateOpen}>
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" className="h-8 w-8 p-0">
@@ -101,22 +147,24 @@ export function PrescriptionsTable({ data }: { data: Prescription[] }) {
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
                            <DialogTrigger asChild>
-                             <DropdownMenuItem onClick={() => setSelectedPrescription(p)}>
+                             <DropdownMenuItem onSelect={() => setSelectedPrescription(p)}>
                                 <Bot className="mr-2 h-4 w-4" />
                                 Send AI Update
                              </DropdownMenuItem>
                            </DialogTrigger>
                         </DropdownMenuContent>
                       </DropdownMenu>
-                      <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>Generate Patient Update</DialogTitle>
-                          <DialogDescription>
-                            Use AI to craft a friendly notification for {p.patientName}.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <PatientUpdateTool prescription={p} />
-                      </DialogContent>
+                       {selectedPrescription && (
+                        <DialogContent className="sm:max-w-md">
+                            <DialogHeader>
+                            <DialogTitle>Generate Patient Update</DialogTitle>
+                            <DialogDescription>
+                                Use AI to craft a friendly notification for {selectedPrescription.patientName}.
+                            </DialogDescription>
+                            </DialogHeader>
+                            <PatientUpdateTool prescription={selectedPrescription} />
+                        </DialogContent>
+                       )}
                     </Dialog>
                   </TableCell>
                 </TableRow>
@@ -131,6 +179,68 @@ export function PrescriptionsTable({ data }: { data: Prescription[] }) {
           </TableBody>
         </Table>
       </div>
+      {selectedPrescription && (
+        <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+            <DialogContent className="sm:max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Prescription Details for {selectedPrescription.patientName}</DialogTitle>
+                    <DialogDescription>
+                        Doctor: {selectedPrescription.doctorName} | Date: {new Date(selectedPrescription.date).toLocaleDateString()}
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="max-h-[60vh] overflow-y-auto pr-4">
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Medicine</TableHead>
+                                <TableHead>Price</TableHead>
+                                <TableHead className="text-right">Status</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {selectedPrescription.medicines.map(med => (
+                                <TableRow key={med.medicineId}>
+                                    <TableCell>
+                                        <div className="font-medium">{med.name}</div>
+                                        <div className="text-sm text-muted-foreground">{med.dosage}</div>
+                                    </TableCell>
+                                    <TableCell>₹{getPriceForMedicine(med.medicineId).toFixed(2)}</TableCell>
+                                    <TableCell className="text-right">
+                                        <RadioGroup 
+                                            value={medicineStatuses[med.medicineId]}
+                                            onValueChange={(value) => handleMedicineStatusChange(med.medicineId, value as MedicineStatus)}
+                                            className="flex justify-end gap-4"
+                                        >
+                                            <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="packaged" id={`${med.medicineId}-packaged`} />
+                                                <Label htmlFor={`${med.medicineId}-packaged`}>Packaged</Label>
+                                            </div>
+                                             <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="out-of-stock" id={`${med.medicineId}-out-of-stock`} />
+                                                <Label htmlFor={`${med.medicineId}-out-of-stock`}>Out of Stock</Label>
+                                            </div>
+                                             <div className="flex items-center space-x-2">
+                                                <RadioGroupItem value="unavailable" id={`${med.medicineId}-unavailable`} />
+                                                <Label htmlFor={`${med.medicineId}-unavailable`}>Unavailable</Label>
+                                            </div>
+                                        </RadioGroup>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </div>
+                <DialogFooter className="mt-4 border-t pt-4 sm:justify-between items-center">
+                   <div className="text-lg font-bold">Total Bill: ₹{calculateTotal().toFixed(2)}</div>
+                    <Button>
+                        <Send className="mr-2 h-4 w-4" /> Send Bill to Patient
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
+
+  
