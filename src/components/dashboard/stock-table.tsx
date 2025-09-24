@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -46,7 +47,7 @@ export function StockTable({ data, onAddMedicine }: StockTableProps) {
   const filteredMedicines = data.filter(
     (med) =>
       med.name.toLowerCase().includes(filter.toLowerCase()) ||
-      med.brand.toLowerCase().includes(filter.toLowerCase())
+      med.manufacturer.toLowerCase().includes(filter.toLowerCase())
   );
 
   return (
@@ -83,7 +84,7 @@ export function StockTable({ data, onAddMedicine }: StockTableProps) {
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
-              <TableHead>Brand</TableHead>
+              <TableHead>Manufacturer</TableHead>
               <TableHead>Quantity</TableHead>
               <TableHead>Expiry Date</TableHead>
               <TableHead>Price</TableHead>
@@ -95,7 +96,7 @@ export function StockTable({ data, onAddMedicine }: StockTableProps) {
               filteredMedicines.map((med) => (
                 <TableRow key={med.id}>
                   <TableCell className="font-medium">{med.name}</TableCell>
-                  <TableCell>{med.brand}</TableCell>
+                  <TableCell>{med.manufacturer}</TableCell>
                   <TableCell>{med.quantity}</TableCell>
                   <TableCell>{new Date(med.expiryDate).toLocaleDateString()}</TableCell>
                   <TableCell>₹{med.price.toFixed(2)}</TableCell>

@@ -1,13 +1,13 @@
 import type { Medicine, Prescription, Notification, SalesData, PrescriptionTrendData, Doctor, Appointment, PatientRecord } from './types';
 
 export const medicines: Medicine[] = [
-  { id: 'med1', name: 'Paracetamol', brand: 'Calpol', quantity: 150, expiryDate: '2025-12-31', price: 5.00, lowStockThreshold: 50 },
-  { id: 'med2', name: 'Ibuprofen', brand: 'Advil', quantity: 45, expiryDate: '2024-11-30', price: 8.50, lowStockThreshold: 50 },
-  { id: 'med3', name: 'Amoxicillin', brand: 'Generic', quantity: 200, expiryDate: '2025-08-01', price: 12.75, lowStockThreshold: 75 },
-  { id: 'med4', name: 'Lisinopril', brand: 'Zestril', quantity: 70, expiryDate: '2026-01-15', price: 22.00, lowStockThreshold: 50 },
-  { id: 'med5', name: 'Metformin', brand: 'Glucophage', quantity: 10, expiryDate: '2024-09-20', price: 15.20, lowStockThreshold: 20 },
-  { id: 'med6', name: 'Amlodipine', brand: 'Norvasc', quantity: 90, expiryDate: '2025-06-30', price: 18.00, lowStockThreshold: 40 },
-  { id: 'med7', name: 'Cetirizine', brand: 'Zyrtec', quantity: 120, expiryDate: '2025-10-10', price: 7.80, lowStockThreshold: 60 },
+  { id: 'med1', name: 'Paracetamol', manufacturer: 'Calpol', description: 'Used for pain relief and to reduce fever.', requiresPrescription: false, quantity: 150, expiryDate: '2025-12-31', price: 5.00, lowStockThreshold: 50 },
+  { id: 'med2', name: 'Ibuprofen', manufacturer: 'Advil', description: 'Reduces inflammation and treats pain.', requiresPrescription: false, quantity: 45, expiryDate: '2024-11-30', price: 8.50, lowStockThreshold: 50 },
+  { id: 'med3', name: 'Amoxicillin', manufacturer: 'Generic', description: 'Antibiotic used to treat bacterial infections.', requiresPrescription: true, quantity: 200, expiryDate: '2025-08-01', price: 12.75, lowStockThreshold: 75 },
+  { id: 'med4', name: 'Lisinopril', manufacturer: 'Zestril', description: 'Treats high blood pressure and heart failure.', requiresPrescription: true, quantity: 70, expiryDate: '2026-01-15', price: 22.00, lowStockThreshold: 50 },
+  { id: 'med5', name: 'Metformin', manufacturer: 'Glucophage', description: 'Used to treat type 2 diabetes.', requiresPrescription: true, quantity: 10, expiryDate: '2024-09-20', price: 15.20, lowStockThreshold: 20 },
+  { id: 'med6', name: 'Amlodipine', manufacturer: 'Norvasc', description: 'Treats high blood pressure and chest pain (angina).', requiresPrescription: true, quantity: 90, expiryDate: '2025-06-30', price: 18.00, lowStockThreshold: 40 },
+  { id: 'med7', name: 'Cetirizine', manufacturer: 'Zyrtec', description: 'Antihistamine for allergy relief.', requiresPrescription: false, quantity: 120, expiryDate: '2025-10-10', price: 7.80, lowStockThreshold: 60 },
 ];
 
 export const prescriptions: Prescription[] = [
@@ -56,13 +56,13 @@ export const notifications: Notification[] = [
 ];
 
 export const salesData: SalesData[] = [
-    {"medicineName": "Paracetamol", "brand": "Calpol", "quantitySold": 120, "date": "2024-01-15"},
-    {"medicineName": "Ibuprofen", "brand": "Advil", "quantitySold": 80, "date": "2024-01-20"},
-    {"medicineName": "Amoxicillin", "brand": "Generic", "quantitySold": 50, "date": "2024-02-10"},
-    {"medicineName": "Cetirizine", "brand": "Zyrtec", "quantitySold": 200, "date": "2024-03-05"},
-    {"medicineName": "Paracetamol", "brand": "Calpol", "quantitySold": 150, "date": "2024-04-12"},
-    {"medicineName": "Lisinopril", "brand": "Zestril", "quantitySold": 60, "date": "2024-05-18"},
-    {"medicineName": "Ibuprofen", "brand": "Advil", "quantitySold": 90, "date": "2024-06-25"},
+    {"medicineName": "Paracetamol", "manufacturer": "Calpol", "quantitySold": 120, "date": "2024-01-15"},
+    {"medicineName": "Ibuprofen", "manufacturer": "Advil", "quantitySold": 80, "date": "2024-01-20"},
+    {"medicineName": "Amoxicillin", "manufacturer": "Generic", "quantitySold": 50, "date": "2024-02-10"},
+    {"medicineName": "Cetirizine", "manufacturer": "Zyrtec", "quantitySold": 200, "date": "2024-03-05"},
+    {"medicineName": "Paracetamol", "manufacturer": "Calpol", "quantitySold": 150, "date": "2024-04-12"},
+    {"medicineName": "Lisinopril", "manufacturer": "Zestril", "quantitySold": 60, "date": "2024-05-18"},
+    {"medicineName": "Ibuprofen", "manufacturer": "Advil", "quantitySold": 90, "date": "2024-06-25"},
 ];
 
 export const prescriptionTrendData: PrescriptionTrendData[] = [

@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -12,7 +13,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AnalyzeSalesTrendsInputSchema = z.object({
-  salesData: z.string().describe('Sales data for the past year, in CSV format with columns: Medicine Name, Brand, Quantity Sold, Date.'),
+  salesData: z.string().describe('Sales data for the past year, in CSV format with columns: Medicine Name, Manufacturer, Quantity Sold, Date.'),
   prescriptionTrends: z.string().describe('Prescription trends data for the past year, in CSV format with columns: Medicine Name, Doctor Specialty, Frequency, Date.'),
 });
 export type AnalyzeSalesTrendsInput = z.infer<typeof AnalyzeSalesTrendsInputSchema>;

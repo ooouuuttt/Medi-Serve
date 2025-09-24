@@ -1,7 +1,9 @@
 export type Medicine = {
   id: string;
   name: string;
-  brand: string;
+  manufacturer: string;
+  description: string;
+  requiresPrescription: boolean;
   quantity: number;
   expiryDate: string;
   price: number;
@@ -32,7 +34,7 @@ export type Notification = {
 
 export type SalesData = {
   medicineName: string;
-  brand: string;
+  manufacturer: string;
   quantitySold: number;
   date: string;
 };

@@ -1,3 +1,4 @@
+
 "use client";
 
 import { createContext, useContext, useState, ReactNode } from 'react';
@@ -6,7 +7,7 @@ import type { Medicine } from '@/lib/types';
 
 type DashboardContextType = {
   medicines: Medicine[];
-  addMedicine: (medicine: Omit<Medicine, 'id'>) => void;
+  addMedicine: (medicine: Omit<Medicine, 'id' | 'brand'>) => void;
 };
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);

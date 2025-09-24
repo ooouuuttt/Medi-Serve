@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -17,10 +18,14 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import type { Medicine } from "@/lib/types";
+import { Textarea } from "../ui/textarea";
+import { Switch } from "../ui/switch";
 
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  brand: z.string().min(2, { message: "Brand must be at least 2 characters." }),
+  manufacturer: z.string().min(2, { message: "Manufacturer must be at least 2 characters." }),
+  description: z.string().min(10, { message: "Description must be at least 10 characters." }),
+  requiresPrescription: z.boolean().default(false),
   quantity: z.coerce.number().min(0, { message: "Quantity can't be negative." }),
   expiryDate: z.string().refine((val) => !isNaN(Date.parse(val)), { message: "Invalid date" }),
   price: z.coerce.number().min(0, { message: "Price can't be negative." }),
@@ -40,7 +45,9 @@ export function AddMedicineForm({ onAddMedicine, onFinished }: AddMedicineFormPr
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      brand: "",
+      manufacturer: "",
+      description: "",
+      requiresPrescription: false,
       quantity: 0,
       expiryDate: "",
       price: 0,
@@ -83,10 +90,10 @@ export function AddMedicineForm({ onAddMedicine, onFinished }: AddMedicineFormPr
             />
             <FormField
             control={form.control}
-            name="brand"
+            name="manufacturer"
             render={({ field }) => (
                 <FormItem>
-                <FormLabel>Brand</FormLabel>
+                <FormLabel>Manufacturer</FormLabel>
                 <FormControl>
                     <Input placeholder="Calpol" {...field} />
                 </FormControl>
@@ -95,6 +102,19 @@ export function AddMedicineForm({ onAddMedicine, onFinished }: AddMedicineFormPr
             )}
             />
         </div>
+         <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+                <FormItem>
+                <FormLabel>Description</FormLabel>
+                <FormControl>
+                    <Textarea placeholder="Used for pain relief..." {...field} />
+                </FormControl>
+                <FormMessage />
+                </FormItem>
+            )}
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
             control={form.control}
@@ -151,6 +171,23 @@ export function AddMedicineForm({ onAddMedicine, onFinished }: AddMedicineFormPr
                 )}
             />
         </div>
+         <FormField
+            control={form.control}
+            name="requiresPrescription"
+            render={({ field }) => (
+                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
+                    <div className="space-y-0.5">
+                        <FormLabel>Requires Prescription</FormLabel>
+                    </div>
+                    <FormControl>
+                        <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        />
+                    </FormControl>
+                </FormItem>
+            )}
+        />
 
         <Button type="submit" className="w-full" disabled={isLoading}>
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
