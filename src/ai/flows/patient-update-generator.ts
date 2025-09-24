@@ -45,7 +45,7 @@ const patientUpdateFlow = ai.defineFlow(
     outputSchema: PatientUpdateOutputSchema,
   },
   async input => {
-    const {output} = await prompt(input);
+    const {output} = await patientUpdatePrompt(input);
     return output!;
   }
 );
