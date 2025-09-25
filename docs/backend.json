@@ -27,6 +27,14 @@
             "type": "string",
             "format": "uri",
             "description": "URL of the uploaded KYC document."
+        },
+        "location": {
+            "type": "string",
+            "description": "The physical address of the pharmacy."
+        },
+        "timings": {
+            "type": "string",
+            "description": "The operating hours of the pharmacy."
         }
       },
       "required": ["ownerName", "pharmacyName", "email"]

@@ -20,6 +20,8 @@ const profileSchema = z.object({
   ownerName: z.string().min(2, "Name is too short"),
   pharmacyName: z.string().min(2, "Pharmacy name is too short"),
   email: z.string().email(),
+  location: z.string().optional(),
+  timings: z.string().optional(),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -39,6 +41,8 @@ export default function ProfilePage() {
       ownerName: "",
       pharmacyName: "",
       email: "",
+      location: "",
+      timings: "",
     },
   });
 
@@ -72,8 +76,6 @@ export default function ProfilePage() {
     if (auth?.currentUser) {
         fetchProfile();
     } else {
-        // Handle case where user is not logged in or auth is not ready
-        // For now, we can just stop loading. A better solution might involve a listener.
         setIsLoading(false);
     }
   }, [auth, firestore, form, toast]);
@@ -88,7 +90,7 @@ export default function ProfilePage() {
     setIsSaving(true);
     try {
         const docRef = doc(firestore, "pharmacies", auth.currentUser.uid);
-        await setDoc(docRef, data, { merge: true }); // Use merge to avoid overwriting other fields
+        await setDoc(docRef, data, { merge: true });
         setIsEditing(false);
         toast({
             title: "Profile Updated",
@@ -108,7 +110,6 @@ export default function ProfilePage() {
   };
   
   const handleCancel = () => {
-      // Re-fetch data to discard changes
        if (auth?.currentUser && firestore) {
         const docRef = doc(firestore, "pharmacies", auth.currentUser.uid);
         getDoc(docRef).then(docSnap => {
@@ -192,6 +193,34 @@ export default function ProfilePage() {
                   </FormItem>
                 )}
               />
+               <div className="grid md:grid-cols-2 gap-4">
+                 <FormField
+                  control={form.control}
+                  name="location"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Location</FormLabel>
+                      <FormControl>
+                        {isLoading ? <Skeleton className="h-10" /> : <Input placeholder="e.g., 123 Main St, Anytown" {...field} disabled={!isEditing} />}
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="timings"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Timings</FormLabel>
+                      <FormControl>
+                         {isLoading ? <Skeleton className="h-10" /> : <Input placeholder="e.g., Mon-Fri: 9am-6pm" {...field} disabled={!isEditing} />}
+                      </FormControl>
+                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </CardContent>
             <CardFooter className="border-t px-6 py-4">
                 {isEditing ? (
