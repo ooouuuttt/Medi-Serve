@@ -19,8 +19,15 @@ const AnalyzeSalesTrendsInputSchema = z.object({
 export type AnalyzeSalesTrendsInput = z.infer<typeof AnalyzeSalesTrendsInputSchema>;
 
 const AnalyzeSalesTrendsOutputSchema = z.object({
-  highestDemandMedicines: z.string().describe('A list of the top 5 medicines in highest demand, with reasons for their demand.'),
-  futureStockPredictions: z.string().describe('Predictions for future stock needs, including seasonal variations and potential shortages.'),
+  highestDemandMedicines: z.array(z.object({
+    name: z.string().describe('The name of the medicine.'),
+    quantity: z.number().describe('The total quantity sold or prescribed.'),
+    reason: z.string().describe('A brief reason for its high demand.'),
+  })).describe('A list of the top 5 medicines in highest demand.'),
+  futureStockPredictions: z.array(z.object({
+    name: z.string().describe('The name of the month.'),
+    total: z.number().describe('The predicted sales quantity for that month.'),
+  })).describe('Predictions for future stock needs for the next few months.'),
   stockOptimizationSuggestions: z.string().describe('Suggestions for optimizing stock levels based on the analysis.'),
 });
 export type AnalyzeSalesTrendsOutput = z.infer<typeof AnalyzeSalesTrendsOutputSchema>;
@@ -45,10 +52,10 @@ const prompt = ai.definePrompt({
 
   Based on this data, provide:
 
-  1. A list of the top 5 medicines in highest demand, with clear reasons for their demand.
-  2. Predictions for future stock needs, including any seasonal variations and potential shortages.
-  3. Specific, actionable suggestions for optimizing stock levels to minimize shortages and maximize sales.
-  \n  Ensure the output is well-formatted and easy to understand.
+  1. A structured list of the top 5 medicines in highest demand, with the medicine name, total quantity, and a brief reason.
+  2. A structured list of predicted sales for the next 6 months in the format { name: "Month", total: predicted_quantity }. Use the provided data to forecast.
+  3. A string containing specific, actionable suggestions for optimizing stock levels to minimize shortages and maximize sales.
+  \n  Ensure the output matches the required JSON schema precisely.
 `,
 });
 

@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Loader2, Wand2, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 
 interface SalesTrendAnalyzerProps {
   salesDataCsv: string;
@@ -48,10 +49,14 @@ export function SalesTrendAnalyzer({ salesDataCsv, prescriptionTrendsCsv }: Sale
     const { highestDemandMedicines, futureStockPredictions, stockOptimizationSuggestions } = analysisResult;
     let reportContent = "Sales Trend Analysis Report\n\n";
     reportContent += "--- Highest Demand Medicines ---\n";
-    reportContent += `${highestDemandMedicines}\n\n`;
-    reportContent += "--- Future Stock Predictions ---\n";
-    reportContent += `${futureStockPredictions}\n\n`;
-    reportContent += "--- Stock Optimization Suggestions ---\n";
+    highestDemandMedicines.forEach(med => {
+        reportContent += `${med.name}: ${med.quantity} units - ${med.reason}\n`;
+    })
+    reportContent += "\n--- Future Stock Predictions ---\n";
+    futureStockPredictions.forEach(pred => {
+        reportContent += `${pred.name}: ${pred.total} units\n`;
+    })
+    reportContent += "\n--- Stock Optimization Suggestions ---\n";
     reportContent += `${stockOptimizationSuggestions}\n\n`;
 
     const blob = new Blob([reportContent], { type: 'text/plain;charset=utf-8' });
@@ -96,16 +101,44 @@ export function SalesTrendAnalyzer({ salesDataCsv, prescriptionTrendsCsv }: Sale
                     <CardHeader>
                         <CardTitle>Highest Demand Medicines</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <p className="text-sm whitespace-pre-wrap">{analysisResult.highestDemandMedicines}</p>
+                    <CardContent className="h-[350px]">
+                       <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={analysisResult.highestDemandMedicines}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: 'hsl(var(--card))',
+                                        borderColor: 'hsl(var(--border))',
+                                    }}
+                                    cursor={{fill: 'hsl(var(--muted))'}}
+                                />
+                                <Bar dataKey="quantity" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
                     </CardContent>
                 </Card>
                  <Card>
                     <CardHeader>
                         <CardTitle>Future Stock Predictions</CardTitle>
                     </CardHeader>
-                    <CardContent>
-                        <p className="text-sm whitespace-pre-wrap">{analysisResult.futureStockPredictions}</p>
+                    <CardContent className="h-[350px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={analysisResult.futureStockPredictions}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                                <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
+                                <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
+                                <Tooltip
+                                    contentStyle={{
+                                        backgroundColor: 'hsl(var(--card))',
+                                        borderColor: 'hsl(var(--border))',
+                                    }}
+                                    cursor={{fill: 'hsl(var(--muted))'}}
+                                />
+                                <Bar dataKey="total" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                        </ResponsiveContainer>
                     </CardContent>
                 </Card>
                  <Card>
