@@ -154,34 +154,32 @@ export function RegisterForm() {
                 </FormItem>
               )}
             />
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="licenseCertificate"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>License Certificate</FormLabel>
-                    <FormControl>
-                      <Input type="file" onChange={(e) => field.onChange(e.target.files)} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="kyc"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Owner KYC</FormLabel>
-                    <FormControl>
-                      <Input type="file" onChange={(e) => field.onChange(e.target.files)} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+            <FormField
+              control={form.control}
+              name="licenseCertificate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>License Certificate</FormLabel>
+                  <FormControl>
+                    <Input type="file" onChange={(e) => field.onChange(e.target.files)} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="kyc"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Owner KYC</FormLabel>
+                  <FormControl>
+                    <Input type="file" onChange={(e) => field.onChange(e.target.files)} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <Button type="submit" className="w-full" disabled={isLoading} variant="accent">
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Register
