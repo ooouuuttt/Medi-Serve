@@ -53,7 +53,7 @@ const prompt = ai.definePrompt({
   Based on this data, provide:
 
   1. A structured list of the top 5 medicines in highest demand, with the medicine name, total quantity, and a brief reason.
-  2. A structured list of predicted sales for the next 6 months in the format { name: "Month", total: predicted_quantity }. Use the provided data to forecast.
+  2. A structured list of predicted sales for the next 6 months in the format { name: "Month", total: predicted_quantity }. Use the provided data to forecast, creating a realistic trend with some variability month-to-month. For example, use months like 'July', 'August', 'September', 'October', 'November', 'December'.
   3. A string containing specific, actionable suggestions for optimizing stock levels to minimize shortages and maximize sales.
   \n  Ensure the output matches the required JSON schema precisely.
 `,

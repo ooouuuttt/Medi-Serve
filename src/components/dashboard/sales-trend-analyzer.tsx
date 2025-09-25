@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Loader2, Wand2, Download } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Separator } from "@/components/ui/separator";
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Line, LineChart } from "recharts";
 
 interface SalesTrendAnalyzerProps {
   salesDataCsv: string;
@@ -125,7 +125,7 @@ export function SalesTrendAnalyzer({ salesDataCsv, prescriptionTrendsCsv }: Sale
                     </CardHeader>
                     <CardContent className="h-[350px]">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={analysisResult.futureStockPredictions}>
+                            <LineChart data={analysisResult.futureStockPredictions}>
                                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                                 <XAxis dataKey="name" stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} />
                                 <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `${value}`} />
@@ -136,8 +136,8 @@ export function SalesTrendAnalyzer({ salesDataCsv, prescriptionTrendsCsv }: Sale
                                     }}
                                     cursor={{fill: 'hsl(var(--muted))'}}
                                 />
-                                <Bar dataKey="total" fill="hsl(var(--chart-2))" radius={[4, 4, 0, 0]} />
-                            </BarChart>
+                                <Line type="monotone" dataKey="total" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={{ fill: "hsl(var(--chart-2))", r: 4 }} activeDot={{ r: 6 }} />
+                            </LineChart>
                         </ResponsiveContainer>
                     </CardContent>
                 </Card>
