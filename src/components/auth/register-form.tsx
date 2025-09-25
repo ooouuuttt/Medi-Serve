@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -72,11 +73,16 @@ export function RegisterForm() {
       router.push("/login");
 
     } catch (error: any) {
-      console.error("Registration failed:", error);
+      let description = "An unexpected error occurred.";
+      if (error.code === 'auth/email-already-in-use') {
+        description = "This email is already in use. Please use a different email or log in.";
+      } else {
+        description = error.message;
+      }
       toast({
         variant: "destructive",
         title: "Registration Failed",
-        description: error.message || "An unexpected error occurred.",
+        description: description,
       });
     } finally {
         setIsLoading(false);
