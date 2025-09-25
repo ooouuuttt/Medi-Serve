@@ -20,11 +20,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
+import { useAuth, useFirestore, useStorage } from "@/firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
-// In a real app, you would handle file uploads more robustly.
 const MAX_FILE_SIZE = 5000000;
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
-
 
 const formSchema = z.object({
   ownerName: z.string().min(2, { message: "Name must be at least 2 characters." }),
@@ -51,6 +53,9 @@ export function RegisterForm() {
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
+  const auth = useAuth();
+  const firestore = useFirestore();
+  const storage = useStorage();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -62,16 +67,57 @@ export function RegisterForm() {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  const uploadFile = async (file: File, path: string): Promise<string> => {
+    const storageRef = ref(storage, path);
+    await uploadBytes(storageRef, file);
+    return getDownloadURL(storageRef);
+  };
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    // Simulate API call for registration
-    setTimeout(() => {
+    try {
+      if (!firestore || !storage || !auth) {
+        throw new Error("Firebase not initialized");
+      }
+      
+      const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
+      const user = userCredential.user;
+
+      const licenseFile = values.licenseCertificate[0] as File;
+      const kycFile = values.kyc[0] as File;
+
+      const licensePath = `pharmacies/${user.uid}/license-${licenseFile.name}`;
+      const kycPath = `pharmacies/${user.uid}/kyc-${kycFile.name}`;
+
+      const [licenseCertificateUrl, kycUrl] = await Promise.all([
+        uploadFile(licenseFile, licensePath),
+        uploadFile(kycFile, kycPath)
+      ]);
+
+      await setDoc(doc(firestore, "pharmacies", user.uid), {
+        ownerName: values.ownerName,
+        pharmacyName: values.pharmacyName,
+        email: values.email,
+        licenseCertificateUrl,
+        kycUrl
+      });
+
       toast({
         title: "Registration Submitted",
-        description: "Your registration is under review. We will notify you upon approval.",
+        description: "Your registration is successful. Please log in.",
       });
       router.push("/login");
-    }, 2000);
+
+    } catch (error: any) {
+      console.error("Registration failed:", error);
+      toast({
+        variant: "destructive",
+        title: "Registration Failed",
+        description: error.message || "An unexpected error occurred.",
+      });
+    } finally {
+        setIsLoading(false);
+    }
   }
 
   return (
@@ -137,7 +183,7 @@ export function RegisterForm() {
                 </FormItem>
               )}
             />
-            <FormField
+             <FormField
               control={form.control}
               name="licenseCertificate"
               render={({ field }) => (
