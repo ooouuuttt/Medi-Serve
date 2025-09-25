@@ -49,24 +49,15 @@ export function useFirebaseApp() {
 
 export function useAuth() {
     const { auth } = useFirebase();
-    if (!auth) {
-        throw new Error('useAuth must be used within a FirebaseProvider');
-    }
     return auth;
 }
 
 export function useFirestore() {
   const { firestore } = useFirebase();
-  if (!firestore) {
-    throw new Error('useFirestore must be used within a FirebaseProvider');
-  }
   return firestore;
 }
 
 export function useStorage() {
     const { storage } = useFirebase();
-    if (!storage) {
-        throw new Error('useStorage must be used within a FirebaseProvider');
-    }
     return storage;
 }

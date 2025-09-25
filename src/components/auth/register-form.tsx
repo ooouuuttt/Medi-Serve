@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -20,33 +19,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
-import { useAuth, useFirestore, useStorage } from "@/firebase";
+import { useAuth, useFirestore } from "@/firebase";
 import { createUserWithEmailAndPassword } from "firebase/auth";
 import { doc, setDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-
-const MAX_FILE_SIZE = 5000000;
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "application/pdf"];
 
 const formSchema = z.object({
   ownerName: z.string().min(2, { message: "Name must be at least 2 characters." }),
   pharmacyName: z.string().min(2, { message: "Pharmacy name must be at least 2 characters." }),
   email: z.string().email({ message: "Invalid email address." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
-  licenseCertificate: z.any()
-    .refine((files) => files?.length == 1, "File is required.")
-    .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 5MB.`)
-    .refine(
-      (files) => ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
-      ".jpg, .jpeg, .png and .pdf files are accepted."
-    ),
-  kyc: z.any()
-    .refine((files) => files?.length == 1, "File is required.")
-    .refine((files) => files?.[0]?.size <= MAX_FILE_SIZE, `Max file size is 5MB.`)
-    .refine(
-      (files) => ACCEPTED_IMAGE_TYPES.includes(files?.[0]?.type),
-      ".jpg, .jpeg, .png and .pdf files are accepted."
-    ),
 });
 
 export function RegisterForm() {
@@ -55,7 +36,6 @@ export function RegisterForm() {
   const [isLoading, setIsLoading] = useState(false);
   const auth = useAuth();
   const firestore = useFirestore();
-  const storage = useStorage();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -67,39 +47,22 @@ export function RegisterForm() {
     },
   });
 
-  const uploadFile = async (file: File, path: string): Promise<string> => {
-    const storageRef = ref(storage, path);
-    await uploadBytes(storageRef, file);
-    return getDownloadURL(storageRef);
-  };
-
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
     try {
-      if (!firestore || !storage || !auth) {
+      if (!firestore || !auth) {
         throw new Error("Firebase not initialized");
       }
       
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
       const user = userCredential.user;
 
-      const licenseFile = values.licenseCertificate[0] as File;
-      const kycFile = values.kyc[0] as File;
-
-      const licensePath = `pharmacies/${user.uid}/license-${licenseFile.name}`;
-      const kycPath = `pharmacies/${user.uid}/kyc-${kycFile.name}`;
-
-      const [licenseCertificateUrl, kycUrl] = await Promise.all([
-        uploadFile(licenseFile, licensePath),
-        uploadFile(kycFile, kycPath)
-      ]);
-
       await setDoc(doc(firestore, "pharmacies", user.uid), {
         ownerName: values.ownerName,
         pharmacyName: values.pharmacyName,
         email: values.email,
-        licenseCertificateUrl,
-        kycUrl
+        licenseCertificateUrl: "dummy-license-url",
+        kycUrl: "dummy-kyc-url"
       });
 
       toast({
@@ -179,34 +142,6 @@ export function RegisterForm() {
                   <FormControl>
                     <Input type="password" placeholder="••••••••" {...field} />
                   </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-             <FormField
-              control={form.control}
-              name="licenseCertificate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>License Certificate</FormLabel>
-                  <FormControl>
-                    <Input type="file" onChange={(e) => field.onChange(e.target.files)} />
-                  </FormControl>
-                  <FormDescription>Upload your pharmacy license (PDF, JPG, PNG).</FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="kyc"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Owner KYC</FormLabel>
-                  <FormControl>
-                    <Input type="file" onChange={(e) => field.onChange(e.target.files)} />
-                  </FormControl>
-                  <FormDescription>Upload Aadhar/PAN (PDF, JPG, PNG).</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
