@@ -52,22 +52,20 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
 
   const addNotification = useCallback(async (notification: Omit<Notification, 'id' | 'date' | 'isRead'>) => {
     if (!auth?.currentUser || !firestore) return;
-
-    // To prevent a flicker/re-render loop, we don't check local state here.
-    // We assume that the calling function has already checked for duplicates if needed.
-    const newNotificationData = {
-      ...notification,
-      date: new Date().toISOString(),
-      isRead: false,
-    };
-
+    
     try {
         const notificationsCollectionRef = collection(firestore, "pharmacies", auth.currentUser.uid, "MediNotify");
+        
+        const newNotificationData = {
+          ...notification,
+          date: new Date().toISOString(),
+          isRead: false,
+        };
+
         const docRef = await addDoc(notificationsCollectionRef, newNotificationData);
         
         setNotifications(prev => {
           const newNotification = { ...newNotificationData, id: docRef.id };
-          // Avoid adding duplicates if a race condition occurs
           if (prev.some(n => n.id === newNotification.id)) return prev;
           const updatedNotifications = [newNotification, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
           setUnreadNotifications(updatedNotifications.filter(n => !n.isRead).length);
@@ -80,19 +78,23 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   }, [auth, firestore]);
   
   const checkExpiryAndLowStock = useCallback((stock: Medicine[], existingNotifications: Notification[]) => {
+    if (!auth?.currentUser || !firestore) return;
+
     const notificationMessages = new Set(existingNotifications.map(n => n.message));
 
     stock.forEach(med => {
       let expiryMessage = '';
       const daysUntilExpiry = differenceInDays(new Date(med.expiryDate), new Date());
+      
       if (daysUntilExpiry <= 30 && daysUntilExpiry > 0) {
         expiryMessage = `${med.name} is expiring in ${daysUntilExpiry} days.`;
       } else if (daysUntilExpiry <= 0) {
         expiryMessage = `${med.name} has expired.`;
       }
+      
       if (expiryMessage && !notificationMessages.has(expiryMessage)) {
         addNotification({ type: 'expiry', message: expiryMessage });
-        notificationMessages.add(expiryMessage); // Prevent adding it again in this session
+        notificationMessages.add(expiryMessage);
       }
 
       let stockMessage = '';
@@ -101,17 +103,20 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
       } else if (med.quantity < med.lowStockThreshold) {
         stockMessage = `${med.name} is running low on stock (${med.quantity} remaining).`;
       }
+
       if (stockMessage && !notificationMessages.has(stockMessage)) {
         addNotification({ type: 'low-stock', message: stockMessage });
-        notificationMessages.add(stockMessage); // Prevent adding it again in this session
+        notificationMessages.add(stockMessage);
       }
     });
-  }, [addNotification]);
+  }, [auth, firestore, addNotification]);
   
   const fetchAllData = useCallback(async (uid: string) => {
     if (!firestore) return;
+    
     setIsProfileLoading(true);
     setIsNotificationsLoading(true);
+
     try {
         const docRef = doc(firestore, "pharmacies", uid);
         const docSnap = await getDoc(docRef);
@@ -122,13 +127,11 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
           setPharmacyStatusState(data.isOpen);
         }
         
-        // Fetch stock
         const stockCollectionRef = collection(firestore, "pharmacies", uid, "stock");
         const stockSnapshot = await getDocs(stockCollectionRef);
         const stockList = stockSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Medicine));
         setMedicines(stockList);
 
-        // Fetch initial notifications
         const notificationsCollectionRef = collection(firestore, "pharmacies", uid, "MediNotify");
         const notificationsSnapshot = await getDocs(query(notificationsCollectionRef));
         let notificationsList = notificationsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
@@ -137,7 +140,6 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         setNotifications(notificationsList);
         setUnreadNotifications(notificationsList.filter(n => !n.isRead).length);
 
-        // Run checks after initial data is loaded
         checkExpiryAndLowStock(stockList, notificationsList);
 
     } catch (error) {
@@ -158,34 +160,45 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
 
 
   useEffect(() => {
-    const unsubscribeAuth = auth?.onAuthStateChanged(user => {
+    if (!auth || !firestore) return;
+
+    const unsubscribeAuth = auth.onAuthStateChanged(user => {
       if (user) {
         fetchAllData(user.uid);
 
-        // Setup real-time listener for prescriptions
-        const presCollectionRef = collection(firestore!, "pharmacies", user.uid, "MediPrescription");
+        const presCollectionRef = collection(firestore, "pharmacies", user.uid, "MediPrescription");
         const unsubscribePrescriptions = onSnapshot(presCollectionRef, (querySnapshot) => {
-            const presList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prescription));
+            const currentPrescriptions = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prescription));
             
-            querySnapshot.docChanges().forEach(async (change) => {
-              if (change.type === "added") {
-                const newPrescription = { id: change.doc.id, ...change.doc.data() } as Prescription;
-                
-                // Check if it's a genuinely new prescription not already in the local state
-                if (!prescriptions.some(p => p.id === newPrescription.id)) {
-                    await addNotification({
-                        type: 'new-prescription',
-                        message: `New prescription received from ${newPrescription.patientName}.`
-                    });
+            setPrescriptions(prevPrescriptions => {
+              querySnapshot.docChanges().forEach((change) => {
+                if (change.type === "added") {
+                  const newPrescription = { id: change.doc.id, ...change.doc.data() } as Prescription;
+                  const isAlreadyPresent = prevPrescriptions.some(p => p.id === newPrescription.id);
+                  if (!isAlreadyPresent) {
+                      addNotification({
+                          type: 'new-prescription',
+                          message: `New prescription received from ${newPrescription.patientName}.`
+                      });
+                  }
                 }
-              }
+              });
+              return currentPrescriptions;
             });
+        });
 
-            setPrescriptions(presList);
+        const notifCollectionRef = collection(firestore, "pharmacies", user.uid, "MediNotify");
+        const unsubscribeNotifications = onSnapshot(notifCollectionRef, (querySnapshot) => {
+            const notificationsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification))
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            
+            setNotifications(notificationsList);
+            setUnreadNotifications(notificationsList.filter(n => !n.isRead).length);
         });
 
         return () => {
           unsubscribePrescriptions();
+          unsubscribeNotifications();
         }
       } else {
         setIsProfileLoading(false);
@@ -197,8 +210,9 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
-    return () => unsubscribeAuth?.();
-  }, [auth, firestore, addNotification, fetchAllData, prescriptions]);
+    return () => unsubscribeAuth();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth, firestore]);
 
 
   const addMedicine = async (newMedicine: Omit<Medicine, 'id'>) => {
@@ -211,7 +225,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     setMedicines(prev => [...prev, {id: docRef.id, ...newMedicine}]);
 
     await addNotification({
-      type: 'new-prescription', // Using this type as a general 'item added'
+      type: 'new-prescription', 
       message: `New medicine added: ${newMedicine.name}.`
     });
 
@@ -243,8 +257,6 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
 
     try {
         await batch.commit();
-        setNotifications(prev => prev.map(n => ({...n, isRead: true})));
-        setUnreadNotifications(0);
         toast({ title: "Success", description: "All notifications marked as read." });
     } catch (error) {
         console.error("Error marking notifications as read:", error);
@@ -301,3 +313,5 @@ export const useDashboard = () => {
   }
   return context;
 };
+
+    
