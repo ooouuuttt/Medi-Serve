@@ -119,6 +119,14 @@ export function PrescriptionsTable({ data }: { data: Prescription[] }) {
     }, 0);
   }
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return "Invalid Date";
+    }
+    return date.toLocaleDateString();
+  };
+
   return (
     <div className="w-full">
       <div className="rounded-md border bg-card">
@@ -139,7 +147,7 @@ export function PrescriptionsTable({ data }: { data: Prescription[] }) {
                 <TableRow key={p.id} onClick={() => handleRowClick(p)} className="cursor-pointer">
                   <TableCell className="font-medium">{p.patientName}</TableCell>
                   <TableCell>{p.doctorName}</TableCell>
-                  <TableCell>{new Date(p.date).toLocaleDateString()}</TableCell>
+                  <TableCell>{formatDate(p.date)}</TableCell>
                   <TableCell>{getStatusBadge(p.status)}</TableCell>
                   <TableCell>{p.medicines.map(m => m.name).join(', ')}</TableCell>
                   <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
@@ -202,7 +210,7 @@ export function PrescriptionsTable({ data }: { data: Prescription[] }) {
                 <DialogHeader>
                     <DialogTitle>Prescription Details for {selectedPrescription.patientName}</DialogTitle>
                     <DialogDescription>
-                        Doctor: {selectedPrescription.doctorName} | Date: {new Date(selectedPrescription.date).toLocaleDateString()}
+                        Doctor: {selectedPrescription.doctorName} | Date: {formatDate(selectedPrescription.date)}
                     </DialogDescription>
                 </DialogHeader>
                 <div className="max-h-[60vh] overflow-y-auto pr-4">
