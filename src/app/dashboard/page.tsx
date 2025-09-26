@@ -5,14 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { prescriptions } from "@/lib/data";
 import Link from "next/link";
 import { ArrowUpRight, Package, ClipboardType, Bell, AlertCircle, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDashboard } from "@/context/dashboard-context";
 
 export default function DashboardPage() {
-  const { medicines, notifications } = useDashboard();
+  const { medicines, notifications, prescriptions } = useDashboard();
 
   const stockSummary = medicines.reduce((acc, med) => {
     if (med.quantity === 0) acc.outOfStock += 1;
