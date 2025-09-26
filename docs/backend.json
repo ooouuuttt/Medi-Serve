@@ -40,6 +40,10 @@
         "isOpen": {
             "type": "boolean",
             "description": "Indicates if the pharmacy is currently open or closed."
+        },
+        "status": {
+            "type": "boolean",
+            "description": "Indicates if the pharmacy is currently open (true) or closed (false)."
         }
       },
       "required": ["ownerName", "pharmacyName", "email"]
