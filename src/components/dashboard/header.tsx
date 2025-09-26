@@ -1,3 +1,4 @@
+
 "use client";
 
 import {
@@ -16,6 +17,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import placeholderImages from '@/lib/placeholder-images.json';
 import { cn } from "@/lib/utils";
+import { useDashboard } from "@/context/dashboard-context";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -33,6 +35,10 @@ const pageTitles: { [key: string]: string } = {
     '/dashboard/analytics': 'Analytics & Reports',
     '/dashboard/notifications': 'Notifications',
     '/dashboard/profile': 'User Profile',
+    '/dashboard/symptom-checker': 'Symptom Checker',
+    '/dashboard/appointments': 'Appointments',
+    '/dashboard/doctors': 'Doctors',
+    '/dashboard/health-records': 'Health Records',
 }
 
 
@@ -40,7 +46,16 @@ export function Header() {
     const router = useRouter();
     const pathname = usePathname();
     const userAvatar = placeholderImages.placeholderImages.find(p => p.id === 'user-avatar');
-    const pageTitle = pageTitles[pathname] || 'MediServe';
+    const { pharmacyStatus, isProfileLoading } = useDashboard();
+    
+    const getPageTitle = () => {
+        for (const path in pageTitles) {
+            if (pathname.startsWith(path) && path !== '/') return pageTitles[path];
+        }
+        return 'MediServe';
+    }
+
+    const pageTitle = getPageTitle();
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b bg-card px-4 md:px-6">
@@ -61,7 +76,8 @@ export function Header() {
               {navItems.map((item) => (
                 <Link key={item.href} href={item.href} className={cn(
                     "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary",
-                    pathname === item.href && "bg-secondary text-primary"
+                    pathname.startsWith(item.href) && item.href !== '/dashboard' ? 'bg-secondary text-primary' : '',
+                    pathname === '/dashboard' && item.href === '/dashboard' ? 'bg-secondary text-primary' : ''
                 )}>
                     <item.icon className="h-5 w-5" />
                     {item.label}
@@ -70,7 +86,15 @@ export function Header() {
             </nav>
           </SheetContent>
         </Sheet>
-        <h1 className="text-xl font-semibold">{pageTitle}</h1>
+        <div className="flex items-center gap-2">
+          <h1 className="text-xl font-semibold">{pageTitle}</h1>
+          {!isProfileLoading && (
+            <div className="flex items-center gap-2">
+                <span className={cn("h-2.5 w-2.5 rounded-full", pharmacyStatus ? "bg-green-500" : "bg-red-500")} />
+                <span className="text-xs font-semibold text-muted-foreground">{pharmacyStatus ? "Open" : "Closed"}</span>
+            </div>
+          )}
+        </div>
       </div>
       <div className="flex items-center gap-2 md:gap-4">
         <Button variant="ghost" size="icon" asChild>

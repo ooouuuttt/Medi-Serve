@@ -28,6 +28,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { CustomSwitch } from "@/components/ui/custom-switch";
+import { useDashboard } from "@/context/dashboard-context";
 
 
 const profileSchema = z.object({
@@ -43,12 +44,12 @@ type ProfileFormValues = z.infer<typeof profileSchema>;
 
 export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   const userAvatar = placeholderImages.placeholderImages.find(p => p.id === 'user-avatar');
   const auth = useAuth();
-  const firestore = useFirestore();
+  const { profile, isProfileLoading, fetchProfile, setPharmacyStatus } = useDashboard();
+
 
   const form = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
@@ -65,50 +66,23 @@ export default function ProfilePage() {
   const isOpen = form.watch("isOpen");
 
   useEffect(() => {
-    async function fetchProfile() {
-      if (auth?.currentUser && firestore) {
-        setIsLoading(true);
-        try {
-          const docRef = doc(firestore, "pharmacies", auth.currentUser.uid);
-          const docSnap = await getDoc(docRef);
-
-          if (docSnap.exists()) {
-            const data = docSnap.data() as ProfileFormValues;
-            form.reset(data);
-          } else {
-            console.log("No such document!");
-          }
-        } catch (error) {
-          console.error("Error fetching profile:", error);
-          toast({
-            variant: "destructive",
-            title: "Error",
-            description: "Could not fetch profile data.",
-          });
-        } finally {
-          setIsLoading(false);
-        }
-      }
+    if (profile) {
+      form.reset(profile);
     }
-
-    if (auth?.currentUser) {
-        fetchProfile();
-    } else {
-        setIsLoading(false);
-    }
-  }, [auth, firestore, form, toast]);
+  }, [profile, form]);
 
 
   const onSubmit = async (data: ProfileFormValues) => {
-    if (!auth?.currentUser || !firestore) {
-        toast({ variant: "destructive", title: "Error", description: "Firebase not initialized." });
+    if (!auth?.currentUser) {
+        toast({ variant: "destructive", title: "Error", description: "You are not logged in." });
         return;
     }
 
-    setIsSaving(true);
+    setIsSubmitting(true);
     try {
-        const docRef = doc(firestore, "pharmacies", auth.currentUser.uid);
+        const docRef = doc(useFirestore()!, "pharmacies", auth.currentUser.uid);
         await setDoc(docRef, data, { merge: true });
+        await fetchProfile(); // Refetch profile to update context
         setIsEditing(false);
         toast({
             title: "Profile Updated",
@@ -123,41 +97,34 @@ export default function ProfilePage() {
         });
     }
     finally {
-      setIsSaving(false);
+      setIsSubmitting(false);
     }
   };
   
   const handleCancel = () => {
-       if (auth?.currentUser && firestore) {
-        const docRef = doc(firestore, "pharmacies", auth.currentUser.uid);
-        getDoc(docRef).then(docSnap => {
-            if (docSnap.exists()) {
-                form.reset(docSnap.data() as ProfileFormValues);
-            }
-        });
-      }
+       if (profile) {
+         form.reset(profile);
+       }
       setIsEditing(false);
   }
 
   const handleStatusChange = async (newStatus: boolean) => {
-    if (!auth?.currentUser || !firestore) return;
-    setIsSaving(true);
+    setIsSubmitting(true);
     try {
-      const docRef = doc(firestore, "pharmacies", auth.currentUser.uid);
-      await setDoc(docRef, { isOpen: newStatus }, { merge: true });
+      await setPharmacyStatus(newStatus);
       form.setValue("isOpen", newStatus);
       toast({
         title: "Status Updated",
         description: `Your pharmacy is now marked as ${newStatus ? "Open" : "Closed"}.`,
       });
     } catch (error) {
-      toast({
+       toast({
         variant: "destructive",
         title: "Update Failed",
         description: "Could not update the status.",
       });
     } finally {
-      setIsSaving(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -172,7 +139,7 @@ export default function ProfilePage() {
               <CardTitle>Profile Details</CardTitle>
             </CardHeader>
             <CardContent className="grid gap-6">
-                {isLoading ? (
+                {isProfileLoading ? (
                     <div className="flex items-center gap-4">
                         <Skeleton className="h-24 w-24 rounded-full" />
                         <div className="grid gap-2">
@@ -199,7 +166,7 @@ export default function ProfilePage() {
                                 <CustomSwitch
                                   checked={isOpen}
                                   onCheckedChange={() => {}} // Dialog trigger handles the click
-                                  disabled={isSaving}
+                                  disabled={isSubmitting}
                                 />
                               </div>
                             </AlertDialogTrigger>
@@ -230,7 +197,7 @@ export default function ProfilePage() {
                     <FormItem>
                       <FormLabel>Owner Name</FormLabel>
                       <FormControl>
-                        {isLoading ? <Skeleton className="h-10" /> : <Input {...field} disabled={!isEditing} />}
+                        {isProfileLoading ? <Skeleton className="h-10" /> : <Input {...field} disabled={!isEditing} />}
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -243,7 +210,7 @@ export default function ProfilePage() {
                     <FormItem>
                       <FormLabel>Pharmacy Name</FormLabel>
                       <FormControl>
-                         {isLoading ? <Skeleton className="h-10" /> : <Input {...field} disabled={!isEditing} />}
+                         {isProfileLoading ? <Skeleton className="h-10" /> : <Input {...field} disabled={!isEditing} />}
                       </FormControl>
                        <FormMessage />
                     </FormItem>
@@ -257,7 +224,7 @@ export default function ProfilePage() {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                       {isLoading ? <Skeleton className="h-10" /> : <Input {...field} disabled />}
+                       {isProfileLoading ? <Skeleton className="h-10" /> : <Input {...field} disabled />}
                     </FormControl>
                      <FormMessage />
                   </FormItem>
@@ -271,7 +238,7 @@ export default function ProfilePage() {
                     <FormItem>
                       <FormLabel>Location</FormLabel>
                       <FormControl>
-                        {isLoading ? <Skeleton className="h-10" /> : <Input placeholder="e.g., 123 Main St, Anytown" {...field} disabled={!isEditing} />}
+                        {isProfileLoading ? <Skeleton className="h-10" /> : <Input placeholder="e.g., 123 Main St, Anytown" {...field} disabled={!isEditing} />}
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -284,7 +251,7 @@ export default function ProfilePage() {
                     <FormItem>
                       <FormLabel>Timings</FormLabel>
                       <FormControl>
-                         {isLoading ? <Skeleton className="h-10" /> : <Input placeholder="e.g., Mon-Fri: 9am-6pm" {...field} disabled={!isEditing} />}
+                         {isProfileLoading ? <Skeleton className="h-10" /> : <Input placeholder="e.g., Mon-Fri: 9am-6pm" {...field} disabled={!isEditing} />}
                       </FormControl>
                        <FormMessage />
                     </FormItem>
@@ -295,8 +262,8 @@ export default function ProfilePage() {
             <CardFooter className="border-t px-6 py-4">
                 {isEditing ? (
                     <div className="flex gap-2">
-                        <Button type="submit" disabled={isSaving}>
-                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+                        <Button type="submit" disabled={isSubmitting}>
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                             Save
                         </Button>
                         <Button variant="outline" onClick={handleCancel}>
@@ -305,7 +272,7 @@ export default function ProfilePage() {
                         </Button>
                     </div>
                 ) : (
-                    <Button onClick={() => setIsEditing(true)} disabled={isLoading}>
+                    <Button onClick={() => setIsEditing(true)} disabled={isProfileLoading}>
                         <Pencil className="mr-2 h-4 w-4" />
                         Edit Profile
                     </Button>
