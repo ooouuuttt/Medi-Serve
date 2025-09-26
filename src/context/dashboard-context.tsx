@@ -81,13 +81,19 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         return; // Don't add if a notification with the exact same message already exists
     }
     
-    const notificationsCollectionRef = collection(firestore, "pharmacies", auth.currentUser.uid, "MediNotify");
-    await addDoc(notificationsCollectionRef, {
+    const newNotificationData = {
       ...notification,
       date: new Date().toISOString(),
       isRead: false,
-    });
-    await fetchNotifications(); // Refetch notifications after adding a new one
+    };
+
+    const notificationsCollectionRef = collection(firestore, "pharmacies", auth.currentUser.uid, "MediNotify");
+    const docRef = await addDoc(notificationsCollectionRef, newNotificationData);
+    
+    const newNotification = { ...newNotificationData, id: docRef.id };
+
+    setNotifications(prev => [newNotification, ...prev]);
+    setUnreadNotifications(prev => prev + 1);
   };
 
   const markAllAsRead = async () => {
@@ -104,7 +110,8 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
 
     try {
         await batch.commit();
-        await fetchNotifications();
+        setNotifications(prev => prev.map(n => ({...n, isRead: true})));
+        setUnreadNotifications(0);
         toast({ title: "Success", description: "All notifications marked as read." });
     } catch (error) {
         console.error("Error marking notifications as read:", error);
@@ -113,34 +120,38 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const checkExpiryAndLowStock = useCallback(async (stock: Medicine[]) => {
+    const notificationPromises: Promise<void>[] = [];
+
     stock.forEach(med => {
       // Check for expiry
       const daysUntilExpiry = differenceInDays(new Date(med.expiryDate), new Date());
       if (daysUntilExpiry <= 30 && daysUntilExpiry > 0) {
-        addNotification({
+        notificationPromises.push(addNotification({
           type: 'expiry',
           message: `${med.name} is expiring in ${daysUntilExpiry} days.`
-        });
+        }));
       } else if (daysUntilExpiry <= 0) {
-         addNotification({
+         notificationPromises.push(addNotification({
           type: 'expiry',
           message: `${med.name} has expired.`
-        });
+        }));
       }
 
       // Check for low stock
        if (med.quantity === 0) {
-         addNotification({
+         notificationPromises.push(addNotification({
           type: 'low-stock',
           message: `${med.name} is out of stock.`
-        });
+        }));
       } else if (med.quantity < med.lowStockThreshold) {
-        addNotification({
+        notificationPromises.push(addNotification({
           type: 'low-stock',
           message: `${med.name} is running low on stock (${med.quantity} remaining).`
-        });
+        }));
       }
     });
+
+    await Promise.all(notificationPromises);
   }, [addNotification]);
 
   const fetchStock = useCallback(async () => {
@@ -176,8 +187,11 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         throw new Error("User not logged in or Firebase not initialized.");
     }
     const stockCollectionRef = collection(firestore, "pharmacies", auth.currentUser.uid, "stock");
-    await addDoc(stockCollectionRef, newMedicine);
+    const docRef = await addDoc(stockCollectionRef, newMedicine);
     
+    // Refresh stock list to include the new medicine with its ID
+    await fetchStock(); 
+
     // Add notification for new medicine
     await addNotification({
       type: 'new-prescription', // Using this type as a general 'item added'
@@ -191,8 +205,6 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         message: `${newMedicine.name} is low on stock (${newMedicine.quantity} added).`
       });
     }
-
-    await fetchStock(); // Refresh stock list
   };
 
    const createSampleNotification = useCallback(async (uid: string) => {
@@ -206,10 +218,9 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
                 date: new Date().toISOString(),
                 isRead: false,
             });
-            await fetchNotifications();
         }
     }
-  }, [firestore, fetchNotifications]);
+  }, [firestore]);
 
   const createSamplePrescription = useCallback(async (uid: string) => {
     if (firestore) {
@@ -225,10 +236,9 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
                 ],
                 status: "Pending"
             });
-            await fetchPrescriptions();
         }
     }
-  }, [firestore, fetchPrescriptions]);
+  }, [firestore]);
 
 
   const fetchProfile = useCallback(async () => {
@@ -243,11 +253,11 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
           setProfile(data);
           setPharmacyStatusState(data.isOpen);
         }
+        await createSampleNotification(auth.currentUser.uid);
+        await createSamplePrescription(auth.currentUser.uid);
         await fetchStock();
         await fetchNotifications();
         await fetchPrescriptions();
-        await createSampleNotification(auth.currentUser.uid);
-        await createSamplePrescription(auth.currentUser.uid);
       } catch (error) {
         console.error("Error fetching profile:", error);
       } finally {
