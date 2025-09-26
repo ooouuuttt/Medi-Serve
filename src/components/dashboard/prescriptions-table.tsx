@@ -39,7 +39,7 @@ import { Label } from "@/components/ui/label";
 type MedicineStatus = "packaged" | "out-of-stock" | "unavailable";
 
 export function PrescriptionsTable({ data }: { data: Prescription[] }) {
-  const { medicines: stock } = useDashboard();
+  const { medicines: stock, addNotification } = useDashboard();
   const [prescriptions, setPrescriptions] = React.useState(data);
   const [selectedPrescription, setSelectedPrescription] = React.useState<Prescription | null>(null);
   const [isAiUpdateOpen, setIsAiUpdateOpen] = React.useState(false);
@@ -48,7 +48,18 @@ export function PrescriptionsTable({ data }: { data: Prescription[] }) {
 
   const handleStatusChange = (id: string, status: Prescription["status"]) => {
     setPrescriptions((prev) =>
-      prev.map((p) => (p.id === id ? { ...p, status } : p))
+      prev.map((p) => {
+        if (p.id === id) {
+          if (p.status === 'Pending' && status === 'Ready for Pickup') {
+            addNotification({
+              type: 'new-prescription',
+              message: `Prescription for ${p.patientName} is now ready for pickup.`,
+            });
+          }
+          return { ...p, status };
+        }
+        return p;
+      })
     );
   };
   
