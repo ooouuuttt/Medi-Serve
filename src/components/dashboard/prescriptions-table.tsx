@@ -121,6 +121,7 @@ export function PrescriptionsTable({ data }: { data: Prescription[] }) {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
+    // Check if the date is valid. If not, return the original string or a placeholder.
     if (isNaN(date.getTime())) {
       return "Invalid Date";
     }
