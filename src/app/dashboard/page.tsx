@@ -21,11 +21,11 @@ export default function DashboardPage() {
     return acc;
   }, { lowStock: 0, outOfStock: 0 });
 
-  // Create a Set of unique medicine identifiers (name + manufacturer) for items in stock
+  // Create a Set of unique medicine identifiers (name + manufacturer + price) for items in stock
   const inStockUniques = new Set(
     medicines
       .filter(med => med.quantity > 0)
-      .map(med => `${med.name}|${med.manufacturer}`)
+      .map(med => `${med.name}|${med.manufacturer}|${med.price}`)
   );
 
   const newPrescriptions = prescriptions.filter(p => p.status === 'Pending');
