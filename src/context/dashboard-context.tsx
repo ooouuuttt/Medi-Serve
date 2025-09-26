@@ -32,7 +32,7 @@ const DashboardContext = createContext<DashboardContextType | undefined>(undefin
 export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   const [medicines, setMedicines] = useState<Medicine[]>(initialMedicines);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [pharmacyStatus, setPharmacyStatus] = useState(true);
+  const [pharmacyStatus, setPharmacyStatusState] = useState(true);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
   
   const auth = useAuth();
@@ -57,7 +57,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         if (docSnap.exists()) {
           const data = docSnap.data() as Profile;
           setProfile(data);
-          setPharmacyStatus(data.isOpen);
+          setPharmacyStatusState(data.isOpen);
         }
       } catch (error) {
         console.error("Error fetching profile:", error);
@@ -94,7 +94,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     const docRef = doc(firestore, "pharmacies", auth.currentUser.uid);
     try {
       await setDoc(docRef, { isOpen }, { merge: true });
-      setPharmacyStatus(isOpen);
+      setPharmacyStatusState(isOpen);
       if (profile) {
         setProfile({...profile, isOpen });
       }
