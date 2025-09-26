@@ -194,7 +194,7 @@ export default function ProfilePage() {
                           </div>
                       </div>
                       <div className="flex items-center gap-4">
-                         <div className={cn("text-lg font-semibold", isOpen ? "text-green-600" : "text-red-600")}>
+                         <div className="text-lg font-semibold">
                            {isOpen ? "Open" : "Closed"}
                           </div>
                           <AlertDialog>
@@ -202,7 +202,10 @@ export default function ProfilePage() {
                               <Switch
                                 checked={isOpen}
                                 disabled={isSaving}
-                                onCheckedChange={() => {}} 
+                                onCheckedChange={() => {}}
+                                className={cn(
+                                    isOpen ? "data-[state=checked]:bg-green-600" : "data-[state=unchecked]:bg-red-600"
+                                )}
                               />
                             </AlertDialogTrigger>
                              <AlertDialogContent>
