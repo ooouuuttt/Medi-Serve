@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from "react";
@@ -15,6 +16,19 @@ import { Loader2, Pencil, Save, X } from "lucide-react";
 import { useAuth, useFirestore } from "@/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { cn } from "@/lib/utils";
+
 
 const profileSchema = z.object({
   ownerName: z.string().min(2, "Name is too short"),
@@ -22,6 +36,7 @@ const profileSchema = z.object({
   email: z.string().email(),
   location: z.string().optional(),
   timings: z.string().optional(),
+  isOpen: z.boolean().default(true),
 });
 
 type ProfileFormValues = z.infer<typeof profileSchema>;
@@ -43,8 +58,11 @@ export default function ProfilePage() {
       email: "",
       location: "",
       timings: "",
+      isOpen: true,
     },
   });
+
+  const isOpen = form.watch("isOpen");
 
   useEffect(() => {
     async function fetchProfile() {
@@ -121,6 +139,29 @@ export default function ProfilePage() {
       setIsEditing(false);
   }
 
+  const handleStatusChange = async (newStatus: boolean) => {
+    if (!auth?.currentUser || !firestore) return;
+    setIsSaving(true);
+    try {
+      const docRef = doc(firestore, "pharmacies", auth.currentUser.uid);
+      await setDoc(docRef, { isOpen: newStatus }, { merge: true });
+      form.setValue("isOpen", newStatus);
+      toast({
+        title: "Status Updated",
+        description: `Your pharmacy is now marked as ${newStatus ? "Open" : "Closed"}.`,
+      });
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: "Update Failed",
+        description: "Could not update the status.",
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+
   return (
     <div className="grid gap-6">
        <h1 className="text-3xl font-bold tracking-tight">User Profile</h1>
@@ -140,15 +181,45 @@ export default function ProfilePage() {
                         </div>
                     </div>
                 ) : (
-                    <div className="flex items-center gap-4">
-                        <Avatar className="h-24 w-24">
-                            {userAvatar && <AvatarImage src={userAvatar.imageUrl} data-ai-hint={userAvatar.imageHint} />}
-                            <AvatarFallback>{form.getValues('ownerName')?.substring(0, 2).toUpperCase() || 'MO'}</AvatarFallback>
-                        </Avatar>
-                        <div className="grid gap-1">
-                            <h2 className="text-2xl font-bold">{form.watch('ownerName')}</h2>
-                            <p className="text-muted-foreground">{form.watch('pharmacyName')}</p>
-                        </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                          <Avatar className="h-24 w-24">
+                              {userAvatar && <AvatarImage src={userAvatar.imageUrl} data-ai-hint={userAvatar.imageHint} />}
+                              <AvatarFallback>{form.getValues('ownerName')?.substring(0, 2).toUpperCase() || 'MO'}</AvatarFallback>
+                          </Avatar>
+                          <div className="grid gap-1">
+                              <h2 className="text-2xl font-bold">{form.watch('ownerName')}</h2>
+                              <p className="text-muted-foreground">{form.watch('pharmacyName')}</p>
+                          </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                         <div className={cn("text-lg font-semibold", isOpen ? "text-green-600" : "text-red-600")}>
+                           {isOpen ? "Open" : "Closed"}
+                          </div>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Switch
+                                checked={isOpen}
+                                disabled={isSaving}
+                                onCheckedChange={() => {}} 
+                              />
+                            </AlertDialogTrigger>
+                             <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Confirm Status Change</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Are you sure you want to change your pharmacy status to {isOpen ? "Closed" : "Open"}?
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleStatusChange(!isOpen)}>
+                                  Confirm
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                      </div>
                     </div>
                 )}
 

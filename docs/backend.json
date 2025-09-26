@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "PharmacyProfile": {
@@ -35,6 +36,10 @@
         "timings": {
             "type": "string",
             "description": "The operating hours of the pharmacy."
+        },
+        "isOpen": {
+            "type": "boolean",
+            "description": "Indicates if the pharmacy is currently open or closed."
         }
       },
       "required": ["ownerName", "pharmacyName", "email"]
