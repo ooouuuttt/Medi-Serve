@@ -46,7 +46,7 @@ export function Header() {
     const router = useRouter();
     const pathname = usePathname();
     const userAvatar = placeholderImages.placeholderImages.find(p => p.id === 'user-avatar');
-    const { pharmacyStatus, isProfileLoading } = useDashboard();
+    const { pharmacyStatus, isProfileLoading, unreadNotifications } = useDashboard();
     
     const getPageTitle = () => {
         for (const path in pageTitles) {
@@ -97,8 +97,14 @@ export function Header() {
         </div>
       </div>
       <div className="flex items-center gap-2 md:gap-4">
-        <Button variant="ghost" size="icon" asChild>
+        <Button variant="ghost" size="icon" asChild className="relative">
           <Link href="/dashboard/notifications">
+            {unreadNotifications > 0 && (
+                <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                </span>
+            )}
             <Bell className="h-5 w-5" />
             <span className="sr-only">Notifications</span>
           </Link>

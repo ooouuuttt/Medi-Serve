@@ -4,7 +4,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Medicine, Notification } from '@/lib/types';
 import { useAuth, useFirestore } from '@/firebase';
-import { doc, getDoc, setDoc, collection, addDoc, getDocs } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc, getDocs, writeBatch, query, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { differenceInDays } from 'date-fns';
 
@@ -21,7 +21,11 @@ type Profile = {
 type DashboardContextType = {
   medicines: Medicine[];
   addMedicine: (medicine: Omit<Medicine, 'id'>) => Promise<void>;
+  notifications: Notification[];
+  unreadNotifications: number;
+  isNotificationsLoading: boolean;
   addNotification: (notification: Omit<Notification, 'id' | 'date' | 'isRead'>) => Promise<void>;
+  markAllAsRead: () => Promise<void>;
   profile: Profile | null;
   pharmacyStatus: boolean;
   isProfileLoading: boolean;
@@ -36,10 +40,32 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [pharmacyStatus, setPharmacyStatusState] = useState(true);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [isNotificationsLoading, setIsNotificationsLoading] = useState(true);
   
   const auth = useAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
+
+  const fetchNotifications = useCallback(async () => {
+    if (auth?.currentUser && firestore) {
+      setIsNotificationsLoading(true);
+      try {
+        const notificationsCollectionRef = collection(firestore, "pharmacies", auth.currentUser.uid, "MediNotify");
+        const q = query(notificationsCollectionRef);
+        const querySnapshot = await getDocs(q);
+        const notificationsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
+        notificationsList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setNotifications(notificationsList);
+        setUnreadNotifications(notificationsList.filter(n => !n.isRead).length);
+      } catch (error) {
+        console.error("Error fetching notifications:", error);
+      } finally {
+        setIsNotificationsLoading(false);
+      }
+    }
+  }, [auth, firestore]);
 
   const addNotification = async (notification: Omit<Notification, 'id' | 'date' | 'isRead'>) => {
     if (!auth?.currentUser || !firestore) return;
@@ -49,6 +75,29 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
       date: new Date().toISOString(),
       isRead: false,
     });
+    await fetchNotifications(); // Refetch notifications after adding a new one
+  };
+
+  const markAllAsRead = async () => {
+    if (!auth?.currentUser || !firestore) return;
+
+    const notificationsToUpdate = notifications.filter(n => !n.isRead);
+    if(notificationsToUpdate.length === 0) return;
+
+    const batch = writeBatch(firestore);
+    notificationsToUpdate.forEach(notification => {
+        const docRef = doc(firestore, "pharmacies", auth.currentUser!.uid, "MediNotify", notification.id);
+        batch.update(docRef, { isRead: true });
+    });
+
+    try {
+        await batch.commit();
+        await fetchNotifications();
+        toast({ title: "Success", description: "All notifications marked as read." });
+    } catch (error) {
+        console.error("Error marking notifications as read:", error);
+        toast({ variant: "destructive", title: "Error", description: "Could not mark notifications as read." });
+    }
   };
 
   const checkExpiryAndLowStock = useCallback(async (stock: Medicine[]) => {
@@ -127,9 +176,10 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
                 date: new Date().toISOString(),
                 isRead: false,
             });
+            await fetchNotifications();
         }
     }
-  }, [firestore]);
+  }, [firestore, fetchNotifications]);
 
 
   const fetchProfile = useCallback(async () => {
@@ -145,6 +195,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
           setPharmacyStatusState(data.isOpen);
         }
         await fetchStock(); // Fetch stock after profile
+        await fetchNotifications(); // Fetch notifications
         await createSampleNotification(auth.currentUser.uid);
       } catch (error) {
         console.error("Error fetching profile:", error);
@@ -154,19 +205,20 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     } else if (!auth?.currentUser) {
         setIsProfileLoading(false);
     }
-  }, [auth, firestore, fetchStock, createSampleNotification]);
+  }, [auth, firestore, fetchStock, fetchNotifications, createSampleNotification]);
 
   useEffect(() => {
     if (auth?.currentUser) {
         fetchProfile();
     } else {
-        // Handle case where user is not logged in or auth is not initialized
         const unsubscribe = auth?.onAuthStateChanged(user => {
             if (user) {
                 fetchProfile();
             } else {
                 setIsProfileLoading(false);
-                setMedicines([]); // Clear medicines on logout
+                setMedicines([]);
+                setNotifications([]);
+                setUnreadNotifications(0);
             }
         });
         return () => unsubscribe?.();
@@ -193,7 +245,20 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <DashboardContext.Provider value={{ medicines, addMedicine, profile, pharmacyStatus, isProfileLoading, fetchProfile, setPharmacyStatus, addNotification }}>
+    <DashboardContext.Provider value={{ 
+      medicines, 
+      addMedicine, 
+      profile, 
+      pharmacyStatus, 
+      isProfileLoading, 
+      fetchProfile, 
+      setPharmacyStatus, 
+      notifications,
+      unreadNotifications,
+      isNotificationsLoading,
+      addNotification,
+      markAllAsRead
+    }}>
       {children}
     </DashboardContext.Provider>
   );

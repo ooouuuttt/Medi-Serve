@@ -1,45 +1,28 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useAuth, useFirestore } from "@/firebase";
-import { collection, getDocs } from "firebase/firestore";
+import { useState } from "react";
+import { useDashboard } from "@/context/dashboard-context";
 import type { Notification } from "@/lib/types";
+import { doc, updateDoc } from "firebase/firestore";
+import { useAuth, useFirestore } from "@/firebase";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Bell, AlertTriangle, ClipboardType } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 export default function NotificationsPage() {
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const auth = useAuth();
-    const firestore = useFirestore();
-
-    useEffect(() => {
-        const fetchNotifications = async () => {
-            if (auth?.currentUser && firestore) {
-                try {
-                    const notificationsCollectionRef = collection(firestore, "pharmacies", auth.currentUser.uid, "MediNotify");
-                    const querySnapshot = await getDocs(notificationsCollectionRef);
-                    const notificationsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
-                    setNotifications(notificationsList.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-                } catch (error) {
-                    console.error("Error fetching notifications:", error);
-                } finally {
-                    setIsLoading(false);
-                }
-            } else {
-                setIsLoading(false);
-            }
-        };
-
-        fetchNotifications();
-    }, [auth, firestore]);
-
+    const { notifications, isNotificationsLoading, markAllAsRead } = useDashboard();
+    
     return (
         <div className="grid gap-6">
-            <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
+            <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-bold tracking-tight">Notifications</h1>
+                <Button variant="outline" onClick={markAllAsRead} disabled={notifications.every(n => n.isRead)}>
+                    Mark all as read
+                </Button>
+            </div>
             <Card>
                 <CardHeader>
                     <CardTitle>All Notifications</CardTitle>
@@ -47,7 +30,7 @@ export default function NotificationsPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-4">
-                        {isLoading ? (
+                        {isNotificationsLoading ? (
                              [...Array(3)].map((_, i) => (
                                 <div key={i} className="flex items-start gap-4 p-4 rounded-lg border">
                                     <Skeleton className="h-10 w-10 rounded-full" />
