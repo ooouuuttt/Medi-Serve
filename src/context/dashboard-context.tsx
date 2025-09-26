@@ -61,6 +61,22 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     await fetchStock(); // Refresh stock list
   };
 
+   const createSampleNotification = useCallback(async (uid: string) => {
+    if (firestore) {
+        const notificationsCollectionRef = collection(firestore, "pharmacies", uid, "MediNotify");
+        const querySnapshot = await getDocs(notificationsCollectionRef);
+        if (querySnapshot.empty) {
+             await addDoc(notificationsCollectionRef, {
+                type: "new-prescription",
+                message: "Welcome! This is a sample notification.",
+                date: new Date().toISOString(),
+                isRead: false,
+            });
+        }
+    }
+  }, [firestore]);
+
+
   const fetchProfile = useCallback(async () => {
     if (auth?.currentUser && firestore) {
       setIsProfileLoading(true);
@@ -74,6 +90,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
           setPharmacyStatusState(data.isOpen);
         }
         await fetchStock(); // Fetch stock after profile
+        await createSampleNotification(auth.currentUser.uid);
       } catch (error) {
         console.error("Error fetching profile:", error);
       } finally {
@@ -82,7 +99,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     } else if (!auth?.currentUser) {
         setIsProfileLoading(false);
     }
-  }, [auth, firestore, fetchStock]);
+  }, [auth, firestore, fetchStock, createSampleNotification]);
 
   useEffect(() => {
     if (auth?.currentUser) {
