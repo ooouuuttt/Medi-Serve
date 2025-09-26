@@ -2,10 +2,9 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import { medicines as initialMedicines } from '@/lib/data';
 import type { Medicine } from '@/lib/types';
 import { useAuth, useFirestore } from '@/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc, getDocs } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 type Profile = {
@@ -19,7 +18,7 @@ type Profile = {
 
 type DashboardContextType = {
   medicines: Medicine[];
-  addMedicine: (medicine: Omit<Medicine, 'id' | 'brand'>) => void;
+  addMedicine: (medicine: Omit<Medicine, 'id'>) => Promise<void>;
   profile: Profile | null;
   pharmacyStatus: boolean;
   isProfileLoading: boolean;
@@ -30,7 +29,7 @@ type DashboardContextType = {
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
 
 export const DashboardProvider = ({ children }: { children: ReactNode }) => {
-  const [medicines, setMedicines] = useState<Medicine[]>(initialMedicines);
+  const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [pharmacyStatus, setPharmacyStatusState] = useState(true);
   const [isProfileLoading, setIsProfileLoading] = useState(true);
@@ -39,12 +38,27 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const addMedicine = (newMedicine: Omit<Medicine, 'id'>) => {
-    const newMed: Medicine = {
-      ...newMedicine,
-      id: `med${medicines.length + 101}` // temporary unique id, avoid collision with initial data
-    };
-    setMedicines(prev => [newMed, ...prev]);
+  const fetchStock = useCallback(async () => {
+    if (auth?.currentUser && firestore) {
+      try {
+        const stockCollectionRef = collection(firestore, "pharmacies", auth.currentUser.uid, "stock");
+        const querySnapshot = await getDocs(stockCollectionRef);
+        const stockList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Medicine));
+        setMedicines(stockList);
+      } catch (error) {
+        console.error("Error fetching stock:", error);
+        toast({ variant: "destructive", title: "Error", description: "Could not fetch stock data." });
+      }
+    }
+  }, [auth, firestore, toast]);
+
+  const addMedicine = async (newMedicine: Omit<Medicine, 'id'>) => {
+    if (!auth?.currentUser || !firestore) {
+        throw new Error("User not logged in or Firebase not initialized.");
+    }
+    const stockCollectionRef = collection(firestore, "pharmacies", auth.currentUser.uid, "stock");
+    await addDoc(stockCollectionRef, newMedicine);
+    await fetchStock(); // Refresh stock list
   };
 
   const fetchProfile = useCallback(async () => {
@@ -59,6 +73,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
           setProfile(data);
           setPharmacyStatusState(data.isOpen);
         }
+        await fetchStock(); // Fetch stock after profile
       } catch (error) {
         console.error("Error fetching profile:", error);
       } finally {
@@ -67,7 +82,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     } else if (!auth?.currentUser) {
         setIsProfileLoading(false);
     }
-  }, [auth, firestore]);
+  }, [auth, firestore, fetchStock]);
 
   useEffect(() => {
     if (auth?.currentUser) {
@@ -79,6 +94,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
                 fetchProfile();
             } else {
                 setIsProfileLoading(false);
+                setMedicines([]); // Clear medicines on logout
             }
         });
         return () => unsubscribe?.();

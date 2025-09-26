@@ -33,7 +33,7 @@ const formSchema = z.object({
 });
 
 type AddMedicineFormProps = {
-    onAddMedicine: (medicine: Omit<Medicine, 'id'>) => void;
+    onAddMedicine: (medicine: Omit<Medicine, 'id'>) => Promise<void>;
     onFinished: () => void;
 }
 
@@ -55,20 +55,26 @@ export function AddMedicineForm({ onAddMedicine, onFinished }: AddMedicineFormPr
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsLoading(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      onAddMedicine(values);
-      toast({
-        title: "Medicine Added",
-        description: `${values.name} has been added to the inventory.`,
-      });
-      setIsLoading(false);
-      form.reset();
-      onFinished();
-    }, 1000);
+    try {
+        await onAddMedicine(values);
+        toast({
+            title: "Medicine Added",
+            description: `${values.name} has been added to your inventory.`,
+        });
+        form.reset();
+        onFinished();
+    } catch (error) {
+        console.error("Error adding medicine:", error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "Failed to add medicine. Please try again.",
+        });
+    } finally {
+        setIsLoading(false);
+    }
   }
 
   return (
