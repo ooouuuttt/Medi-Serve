@@ -97,7 +97,7 @@ export default function DashboardPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {newPrescriptions.slice(0, 5).map((p) => (
+                {newPrescriptions.slice(0, 2).map((p) => (
                   <TableRow key={p.id}>
                     <TableCell>
                       <div className="font-medium">{p.patientName}</div>
