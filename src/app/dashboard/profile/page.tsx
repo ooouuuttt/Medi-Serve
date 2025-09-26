@@ -16,7 +16,6 @@ import { Loader2, Pencil, Save, X } from "lucide-react";
 import { useAuth, useFirestore } from "@/firebase";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,7 +27,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { cn } from "@/lib/utils";
+import { CustomSwitch } from "@/components/ui/custom-switch";
 
 
 const profileSchema = z.object({
@@ -194,19 +193,15 @@ export default function ProfilePage() {
                           </div>
                       </div>
                       <div className="flex items-center gap-4">
-                         <div className="text-lg font-semibold">
-                           {isOpen ? "Open" : "Closed"}
-                          </div>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Switch
-                                checked={isOpen}
-                                disabled={isSaving}
-                                onCheckedChange={() => {}}
-                                className={cn(
-                                    isOpen ? "data-[state=checked]:bg-green-600" : "data-[state=unchecked]:bg-red-600"
-                                )}
-                              />
+                              <div className="cursor-pointer">
+                                <CustomSwitch
+                                  checked={isOpen}
+                                  onCheckedChange={() => {}} // Dialog trigger handles the click
+                                  disabled={isSaving}
+                                />
+                              </div>
                             </AlertDialogTrigger>
                              <AlertDialogContent>
                               <AlertDialogHeader>
