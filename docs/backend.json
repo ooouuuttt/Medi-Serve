@@ -47,6 +47,47 @@
         }
       },
       "required": ["ownerName", "pharmacyName", "email"]
+    },
+    "StockItem": {
+      "title": "Stock Item",
+      "description": "Represents an item in the pharmacy's stock.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "The name of the medicine."
+        },
+        "manufacturer": {
+          "type": "string",
+          "description": "The manufacturer of the medicine."
+        },
+        "description": {
+            "type": "string",
+            "description": "A description of the medicine."
+        },
+        "requiresPrescription": {
+            "type": "boolean",
+            "description": "Indicates if a prescription is required."
+        },
+        "quantity": {
+          "type": "number",
+          "description": "The quantity in stock."
+        },
+        "expiryDate": {
+          "type": "string",
+          "format": "date",
+          "description": "The expiry date of the medicine."
+        },
+        "price": {
+          "type": "number",
+          "description": "The price of the medicine."
+        },
+        "lowStockThreshold": {
+            "type": "number",
+            "description": "The threshold for a low stock warning."
+        }
+      },
+      "required": ["name", "manufacturer", "quantity", "expiryDate", "price"]
     }
   },
   "auth": {
@@ -58,6 +99,12 @@
         "$ref": "#/entities/PharmacyProfile"
       },
       "description": "Stores pharmacy profile information, where the document ID is the Firebase Auth UID."
+    },
+    "/pharmacies/{pharmacyId}/stock/{stockId}": {
+        "schema": {
+            "$ref": "#/entities/StockItem"
+        },
+        "description": "Stores stock items for a specific pharmacy."
     }
   }
 }
