@@ -2,7 +2,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { Medicine, Notification } from '@/lib/types';
+import type { Medicine, Notification, Prescription } from '@/lib/types';
 import { useAuth, useFirestore } from '@/firebase';
 import { doc, getDoc, setDoc, collection, addDoc, getDocs, writeBatch, query, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
@@ -31,6 +31,8 @@ type DashboardContextType = {
   isProfileLoading: boolean;
   fetchProfile: () => Promise<void>;
   setPharmacyStatus: (isOpen: boolean) => Promise<void>;
+  prescriptions: Prescription[];
+  setPrescriptions: React.Dispatch<React.SetStateAction<Prescription[]>>;
 };
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
@@ -43,6 +45,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(true);
+  const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
   
   const auth = useAuth();
   const firestore = useFirestore();
@@ -69,6 +72,15 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
 
   const addNotification = async (notification: Omit<Notification, 'id' | 'date' | 'isRead'>) => {
     if (!auth?.currentUser || !firestore) return;
+
+    // Prevent duplicate notifications
+    const q = query(collection(firestore, "pharmacies", auth.currentUser.uid, "MediNotify"), where("message", "==", notification.message));
+    const existingNotifications = await getDocs(q);
+    if (!existingNotifications.empty) {
+        // console.log("Duplicate notification suppressed:", notification.message);
+        return; // Don't add if a notification with the exact same message already exists
+    }
+    
     const notificationsCollectionRef = collection(firestore, "pharmacies", auth.currentUser.uid, "MediNotify");
     await addDoc(notificationsCollectionRef, {
       ...notification,
@@ -117,14 +129,19 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
       }
 
       // Check for low stock
-      if (med.quantity < med.lowStockThreshold) {
+       if (med.quantity === 0) {
+         addNotification({
+          type: 'low-stock',
+          message: `${med.name} is out of stock.`
+        });
+      } else if (med.quantity < med.lowStockThreshold) {
         addNotification({
           type: 'low-stock',
           message: `${med.name} is running low on stock (${med.quantity} remaining).`
         });
       }
     });
-  }, [auth, firestore]);
+  }, [addNotification]);
 
   const fetchStock = useCallback(async () => {
     if (auth?.currentUser && firestore) {
@@ -140,6 +157,19 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
       }
     }
   }, [auth, firestore, toast, checkExpiryAndLowStock]);
+
+    const fetchPrescriptions = useCallback(async () => {
+    if (auth?.currentUser && firestore) {
+      try {
+        const presCollectionRef = collection(firestore, "pharmacies", auth.currentUser.uid, "MediPrescription");
+        const querySnapshot = await getDocs(presCollectionRef);
+        const presList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prescription));
+        setPrescriptions(presList);
+      } catch (error) {
+        console.error("Error fetching prescriptions:", error);
+      }
+    }
+  }, [auth, firestore]);
 
   const addMedicine = async (newMedicine: Omit<Medicine, 'id'>) => {
     if (!auth?.currentUser || !firestore) {
@@ -181,6 +211,25 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [firestore, fetchNotifications]);
 
+  const createSamplePrescription = useCallback(async (uid: string) => {
+    if (firestore) {
+        const presCollectionRef = collection(firestore, "pharmacies", uid, "MediPrescription");
+        const querySnapshot = await getDocs(presCollectionRef);
+        if (querySnapshot.empty) {
+            await addDoc(presCollectionRef, {
+                patientName: "John Doe",
+                doctorName: "Dr. Smith",
+                date: new Date().toISOString(),
+                medicines: [
+                    { medicineId: 'med1', name: 'Paracetamol', dosage: '500mg, as needed', quantity: 20 }
+                ],
+                status: "Pending"
+            });
+            await fetchPrescriptions();
+        }
+    }
+  }, [firestore, fetchPrescriptions]);
+
 
   const fetchProfile = useCallback(async () => {
     if (auth?.currentUser && firestore) {
@@ -194,9 +243,11 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
           setProfile(data);
           setPharmacyStatusState(data.isOpen);
         }
-        await fetchStock(); // Fetch stock after profile
-        await fetchNotifications(); // Fetch notifications
+        await fetchStock();
+        await fetchNotifications();
+        await fetchPrescriptions();
         await createSampleNotification(auth.currentUser.uid);
+        await createSamplePrescription(auth.currentUser.uid);
       } catch (error) {
         console.error("Error fetching profile:", error);
       } finally {
@@ -205,7 +256,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     } else if (!auth?.currentUser) {
         setIsProfileLoading(false);
     }
-  }, [auth, firestore, fetchStock, fetchNotifications, createSampleNotification]);
+  }, [auth, firestore, fetchStock, fetchNotifications, fetchPrescriptions, createSampleNotification, createSamplePrescription]);
 
   useEffect(() => {
     if (auth?.currentUser) {
@@ -219,6 +270,7 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
                 setMedicines([]);
                 setNotifications([]);
                 setUnreadNotifications(0);
+                setPrescriptions([]);
             }
         });
         return () => unsubscribe?.();
@@ -257,7 +309,9 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
       unreadNotifications,
       isNotificationsLoading,
       addNotification,
-      markAllAsRead
+      markAllAsRead,
+      prescriptions,
+      setPrescriptions
     }}>
       {children}
     </DashboardContext.Provider>

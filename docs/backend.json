@@ -114,6 +114,57 @@
             }
         },
         "required": ["type", "message", "date", "isRead"]
+    },
+    "MediPrescriptionItem": {
+      "title": "MediPrescription Item",
+      "description": "Represents a prescription in the MediPrescription collection.",
+      "type": "object",
+      "properties": {
+        "patientName": {
+          "type": "string",
+          "description": "The name of the patient."
+        },
+        "doctorName": {
+          "type": "string",
+          "description": "The name of the doctor who issued the prescription."
+        },
+        "date": {
+          "type": "string",
+          "format": "date-time",
+          "description": "The date the prescription was issued."
+        },
+        "medicines": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "medicineId": {
+                "type": "string",
+                "description": "The ID of the medicine in the stock."
+              },
+              "name": {
+                "type": "string",
+                "description": "The name of the medicine."
+              },
+              "dosage": {
+                "type": "string",
+                "description": "The prescribed dosage."
+              },
+              "quantity": {
+                "type": "number",
+                "description": "The quantity prescribed."
+              }
+            },
+            "required": ["medicineId", "name", "dosage", "quantity"]
+          }
+        },
+        "status": {
+          "type": "string",
+          "enum": ["Pending", "Ready for Pickup", "Completed", "Out of Stock"],
+          "description": "The status of the prescription."
+        }
+      },
+      "required": ["patientName", "doctorName", "date", "medicines", "status"]
     }
   },
   "auth": {
@@ -137,6 +188,12 @@
             "$ref": "#/entities/MediNotifyItem"
         },
         "description": "Stores notifications for a specific pharmacy."
+    },
+    "/pharmacies/{pharmacyId}/MediPrescription/{prescriptionId}": {
+      "schema": {
+        "$ref": "#/entities/MediPrescriptionItem"
+      },
+      "description": "Stores prescription details for a specific pharmacy."
     }
   }
 }

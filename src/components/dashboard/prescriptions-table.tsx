@@ -35,20 +35,27 @@ import { PatientUpdateTool } from "./patient-update-tool";
 import { useDashboard } from "@/context/dashboard-context";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { useAuth, useFirestore } from "@/firebase";
+import { doc, updateDoc } from "firebase/firestore";
 
 type MedicineStatus = "packaged" | "out-of-stock" | "unavailable";
 
 export function PrescriptionsTable({ data }: { data: Prescription[] }) {
-  const { medicines: stock, addNotification } = useDashboard();
-  const [prescriptions, setPrescriptions] = React.useState(data);
+  const { medicines: stock, addNotification, prescriptions, setPrescriptions } = useDashboard();
   const [selectedPrescription, setSelectedPrescription] = React.useState<Prescription | null>(null);
   const [isAiUpdateOpen, setIsAiUpdateOpen] = React.useState(false);
   const [isDetailOpen, setIsDetailOpen] = React.useState(false);
   const [medicineStatuses, setMedicineStatuses] = React.useState<Record<string, MedicineStatus>>({});
+  const auth = useAuth();
+  const firestore = useFirestore();
 
-  const handleStatusChange = (id: string, status: Prescription["status"]) => {
-    setPrescriptions((prev) =>
-      prev.map((p) => {
+  const handleStatusChange = async (id: string, status: Prescription["status"]) => {
+    if (!auth?.currentUser || !firestore) return;
+
+    const presDocRef = doc(firestore, "pharmacies", auth.currentUser.uid, "MediPrescription", id);
+    await updateDoc(presDocRef, { status });
+
+    const updatedPrescriptions = prescriptions.map((p) => {
         if (p.id === id) {
           if (p.status === 'Pending' && status === 'Ready for Pickup') {
             addNotification({
@@ -59,8 +66,8 @@ export function PrescriptionsTable({ data }: { data: Prescription[] }) {
           return { ...p, status };
         }
         return p;
-      })
-    );
+      });
+      setPrescriptions(updatedPrescriptions);
   };
   
   const getStatusBadge = (status: Prescription["status"]) => {
