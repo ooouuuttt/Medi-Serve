@@ -51,11 +51,85 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   const firestore = useFirestore();
   const { toast } = useToast();
 
-  const fetchNotifications = useCallback(async () => {
-    if (auth?.currentUser && firestore) {
+  const addNotification = useCallback(async (notification: Omit<Notification, 'id' | 'date' | 'isRead'>) => {
+    if (!auth?.currentUser || !firestore) return;
+
+    // Prevent duplicate notifications by checking local state first
+    if (notifications.some(n => n.message === notification.message)) {
+      return;
+    }
+
+    const newNotificationData = {
+      ...notification,
+      date: new Date().toISOString(),
+      isRead: false,
+    };
+
+    try {
+        const notificationsCollectionRef = collection(firestore, "pharmacies", auth.currentUser.uid, "MediNotify");
+        const docRef = await addDoc(notificationsCollectionRef, newNotificationData);
+        
+        const newNotification = { ...newNotificationData, id: docRef.id };
+        setNotifications(prev => [newNotification, ...prev]);
+        setUnreadNotifications(prev => prev + 1);
+    } catch(error) {
+        console.error("Error adding notification:", error);
+    }
+  }, [auth, firestore, notifications]);
+
+  const checkExpiryAndLowStock = useCallback((stock: Medicine[]) => {
+    const notificationPromises: Promise<void>[] = [];
+    stock.forEach(med => {
+      const daysUntilExpiry = differenceInDays(new Date(med.expiryDate), new Date());
+      if (daysUntilExpiry <= 30 && daysUntilExpiry > 0) {
+        notificationPromises.push(addNotification({
+          type: 'expiry',
+          message: `${med.name} is expiring in ${daysUntilExpiry} days.`
+        }));
+      } else if (daysUntilExpiry <= 0) {
+         notificationPromises.push(addNotification({
+          type: 'expiry',
+          message: `${med.name} has expired.`
+        }));
+      }
+
+      if (med.quantity === 0) {
+         notificationPromises.push(addNotification({
+          type: 'low-stock',
+          message: `${med.name} is out of stock.`
+        }));
+      } else if (med.quantity < med.lowStockThreshold) {
+        notificationPromises.push(addNotification({
+          type: 'low-stock',
+          message: `${med.name} is running low on stock (${med.quantity} remaining).`
+        }));
+      }
+    });
+    return Promise.all(notificationPromises);
+  }, [addNotification]);
+
+  const fetchStock = useCallback(async (uid: string) => {
+    if (firestore) {
+      try {
+        const stockCollectionRef = collection(firestore, "pharmacies", uid, "stock");
+        const querySnapshot = await getDocs(stockCollectionRef);
+        const stockList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Medicine));
+        setMedicines(stockList);
+        return stockList;
+      } catch (error) {
+        console.error("Error fetching stock:", error);
+        toast({ variant: "destructive", title: "Error", description: "Could not fetch stock data." });
+        return [];
+      }
+    }
+    return [];
+  }, [firestore, toast]);
+  
+  const fetchNotifications = useCallback(async (uid: string) => {
+    if (firestore) {
       setIsNotificationsLoading(true);
       try {
-        const notificationsCollectionRef = collection(firestore, "pharmacies", auth.currentUser.uid, "MediNotify");
+        const notificationsCollectionRef = collection(firestore, "pharmacies", uid, "MediNotify");
         const q = query(notificationsCollectionRef);
         const querySnapshot = await getDocs(q);
         const notificationsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification));
@@ -68,33 +142,122 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         setIsNotificationsLoading(false);
       }
     }
-  }, [auth, firestore]);
+  }, [firestore]);
 
-  const addNotification = async (notification: Omit<Notification, 'id' | 'date' | 'isRead'>) => {
-    if (!auth?.currentUser || !firestore) return;
-
-    // Prevent duplicate notifications
-    const q = query(collection(firestore, "pharmacies", auth.currentUser.uid, "MediNotify"), where("message", "==", notification.message));
-    const existingNotifications = await getDocs(q);
-    if (!existingNotifications.empty) {
-        // console.log("Duplicate notification suppressed:", notification.message);
-        return; // Don't add if a notification with the exact same message already exists
+  const fetchPrescriptions = useCallback(async (uid: string) => {
+    if (firestore) {
+      try {
+        const presCollectionRef = collection(firestore, "pharmacies", uid, "MediPrescription");
+        const querySnapshot = await getDocs(presCollectionRef);
+        const presList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prescription));
+        setPrescriptions(presList);
+      } catch (error) {
+        console.error("Error fetching prescriptions:", error);
+      }
     }
-    
-    const newNotificationData = {
-      ...notification,
-      date: new Date().toISOString(),
-      isRead: false,
-    };
+  }, [firestore]);
 
-    const notificationsCollectionRef = collection(firestore, "pharmacies", auth.currentUser.uid, "MediNotify");
-    const docRef = await addDoc(notificationsCollectionRef, newNotificationData);
-    
-    const newNotification = { ...newNotificationData, id: docRef.id };
+  const createSampleData = useCallback(async (uid: string) => {
+      if (!firestore) return;
+      
+      const notificationsCollectionRef = collection(firestore, "pharmacies", uid, "MediNotify");
+      const notificationsSnapshot = await getDocs(notificationsCollectionRef);
+      if (notificationsSnapshot.empty) {
+           await addDoc(notificationsCollectionRef, {
+              type: "new-prescription",
+              message: "Welcome! This is a sample notification.",
+              date: new Date().toISOString(),
+              isRead: false,
+          });
+      }
 
-    setNotifications(prev => [newNotification, ...prev]);
-    setUnreadNotifications(prev => prev + 1);
+      const presCollectionRef = collection(firestore, "pharmacies", uid, "MediPrescription");
+      const presSnapshot = await getDocs(presCollectionRef);
+      if (presSnapshot.empty) {
+          await addDoc(presCollectionRef, {
+              patientName: "John Doe",
+              doctorName: "Dr. Smith",
+              date: new Date().toISOString(),
+              medicines: [
+                  { medicineId: 'med1', name: 'Paracetamol', dosage: '500mg, as needed', quantity: 20 }
+              ],
+              status: "Pending"
+          });
+      }
+  }, [firestore]);
+
+
+  const fetchProfile = useCallback(async () => {
+    if (auth?.currentUser && firestore) {
+      setIsProfileLoading(true);
+      const uid = auth.currentUser.uid;
+      try {
+        const docRef = doc(firestore, "pharmacies", uid);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data() as Profile;
+          setProfile(data);
+          setPharmacyStatusState(data.isOpen);
+        }
+
+        await createSampleData(uid);
+        const stockData = await fetchStock(uid);
+        await fetchNotifications(uid);
+        await fetchPrescriptions(uid);
+        // This must run after notifications are fetched to avoid duplicate welcome messages.
+        await checkExpiryAndLowStock(stockData); 
+
+      } catch (error) {
+        console.error("Error fetching profile and related data:", error);
+      } finally {
+        setIsProfileLoading(false);
+      }
+    } else if (!auth?.currentUser) {
+        setIsProfileLoading(false);
+    }
+  }, [auth, firestore, createSampleData, fetchStock, fetchNotifications, fetchPrescriptions, checkExpiryAndLowStock]);
+
+
+  useEffect(() => {
+    const unsubscribe = auth?.onAuthStateChanged(user => {
+      if (user) {
+        fetchProfile();
+      } else {
+        setIsProfileLoading(false);
+        setMedicines([]);
+        setNotifications([]);
+        setUnreadNotifications(0);
+        setPrescriptions([]);
+        setProfile(null);
+      }
+    });
+    return () => unsubscribe?.();
+  }, [auth, fetchProfile]);
+
+
+  const addMedicine = async (newMedicine: Omit<Medicine, 'id'>) => {
+    if (!auth?.currentUser || !firestore) {
+        throw new Error("User not logged in or Firebase not initialized.");
+    }
+    const stockCollectionRef = collection(firestore, "pharmacies", auth.currentUser.uid, "stock");
+    const docRef = await addDoc(stockCollectionRef, newMedicine);
+    
+    setMedicines(prev => [...prev, {id: docRef.id, ...newMedicine}]);
+
+    await addNotification({
+      type: 'new-prescription', // Using this type as a general 'item added'
+      message: `New medicine added: ${newMedicine.name}.`
+    });
+
+    if (newMedicine.quantity < newMedicine.lowStockThreshold) {
+      await addNotification({
+        type: 'low-stock',
+        message: `${newMedicine.name} is low on stock (${newMedicine.quantity} added).`
+      });
+    }
   };
+
 
   const markAllAsRead = async () => {
     if (!auth?.currentUser || !firestore) return;
@@ -119,173 +282,6 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const checkExpiryAndLowStock = useCallback(async (stock: Medicine[]) => {
-    const notificationPromises: Promise<void>[] = [];
-
-    stock.forEach(med => {
-      // Check for expiry
-      const daysUntilExpiry = differenceInDays(new Date(med.expiryDate), new Date());
-      if (daysUntilExpiry <= 30 && daysUntilExpiry > 0) {
-        notificationPromises.push(addNotification({
-          type: 'expiry',
-          message: `${med.name} is expiring in ${daysUntilExpiry} days.`
-        }));
-      } else if (daysUntilExpiry <= 0) {
-         notificationPromises.push(addNotification({
-          type: 'expiry',
-          message: `${med.name} has expired.`
-        }));
-      }
-
-      // Check for low stock
-       if (med.quantity === 0) {
-         notificationPromises.push(addNotification({
-          type: 'low-stock',
-          message: `${med.name} is out of stock.`
-        }));
-      } else if (med.quantity < med.lowStockThreshold) {
-        notificationPromises.push(addNotification({
-          type: 'low-stock',
-          message: `${med.name} is running low on stock (${med.quantity} remaining).`
-        }));
-      }
-    });
-
-    await Promise.all(notificationPromises);
-  }, [addNotification]);
-
-  const fetchStock = useCallback(async () => {
-    if (auth?.currentUser && firestore) {
-      try {
-        const stockCollectionRef = collection(firestore, "pharmacies", auth.currentUser.uid, "stock");
-        const querySnapshot = await getDocs(stockCollectionRef);
-        const stockList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Medicine));
-        setMedicines(stockList);
-        await checkExpiryAndLowStock(stockList); // Check stock on fetch
-      } catch (error) {
-        console.error("Error fetching stock:", error);
-        toast({ variant: "destructive", title: "Error", description: "Could not fetch stock data." });
-      }
-    }
-  }, [auth, firestore, toast, checkExpiryAndLowStock]);
-
-    const fetchPrescriptions = useCallback(async () => {
-    if (auth?.currentUser && firestore) {
-      try {
-        const presCollectionRef = collection(firestore, "pharmacies", auth.currentUser.uid, "MediPrescription");
-        const querySnapshot = await getDocs(presCollectionRef);
-        const presList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prescription));
-        setPrescriptions(presList);
-      } catch (error) {
-        console.error("Error fetching prescriptions:", error);
-      }
-    }
-  }, [auth, firestore]);
-
-  const addMedicine = async (newMedicine: Omit<Medicine, 'id'>) => {
-    if (!auth?.currentUser || !firestore) {
-        throw new Error("User not logged in or Firebase not initialized.");
-    }
-    const stockCollectionRef = collection(firestore, "pharmacies", auth.currentUser.uid, "stock");
-    const docRef = await addDoc(stockCollectionRef, newMedicine);
-    
-    // Refresh stock list to include the new medicine with its ID
-    await fetchStock(); 
-
-    // Add notification for new medicine
-    await addNotification({
-      type: 'new-prescription', // Using this type as a general 'item added'
-      message: `New medicine added: ${newMedicine.name}.`
-    });
-
-    // Add notification if stock is low
-    if (newMedicine.quantity < newMedicine.lowStockThreshold) {
-      await addNotification({
-        type: 'low-stock',
-        message: `${newMedicine.name} is low on stock (${newMedicine.quantity} added).`
-      });
-    }
-  };
-
-   const createSampleNotification = useCallback(async (uid: string) => {
-    if (firestore) {
-        const notificationsCollectionRef = collection(firestore, "pharmacies", uid, "MediNotify");
-        const querySnapshot = await getDocs(notificationsCollectionRef);
-        if (querySnapshot.empty) {
-             await addDoc(notificationsCollectionRef, {
-                type: "new-prescription",
-                message: "Welcome! This is a sample notification.",
-                date: new Date().toISOString(),
-                isRead: false,
-            });
-        }
-    }
-  }, [firestore]);
-
-  const createSamplePrescription = useCallback(async (uid: string) => {
-    if (firestore) {
-        const presCollectionRef = collection(firestore, "pharmacies", uid, "MediPrescription");
-        const querySnapshot = await getDocs(presCollectionRef);
-        if (querySnapshot.empty) {
-            await addDoc(presCollectionRef, {
-                patientName: "John Doe",
-                doctorName: "Dr. Smith",
-                date: new Date().toISOString(),
-                medicines: [
-                    { medicineId: 'med1', name: 'Paracetamol', dosage: '500mg, as needed', quantity: 20 }
-                ],
-                status: "Pending"
-            });
-        }
-    }
-  }, [firestore]);
-
-
-  const fetchProfile = useCallback(async () => {
-    if (auth?.currentUser && firestore) {
-      setIsProfileLoading(true);
-      try {
-        const docRef = doc(firestore, "pharmacies", auth.currentUser.uid);
-        const docSnap = await getDoc(docRef);
-
-        if (docSnap.exists()) {
-          const data = docSnap.data() as Profile;
-          setProfile(data);
-          setPharmacyStatusState(data.isOpen);
-        }
-        await createSampleNotification(auth.currentUser.uid);
-        await createSamplePrescription(auth.currentUser.uid);
-        await fetchStock();
-        await fetchNotifications();
-        await fetchPrescriptions();
-      } catch (error) {
-        console.error("Error fetching profile:", error);
-      } finally {
-        setIsProfileLoading(false);
-      }
-    } else if (!auth?.currentUser) {
-        setIsProfileLoading(false);
-    }
-  }, [auth, firestore, fetchStock, fetchNotifications, fetchPrescriptions, createSampleNotification, createSamplePrescription]);
-
-  useEffect(() => {
-    if (auth?.currentUser) {
-        fetchProfile();
-    } else {
-        const unsubscribe = auth?.onAuthStateChanged(user => {
-            if (user) {
-                fetchProfile();
-            } else {
-                setIsProfileLoading(false);
-                setMedicines([]);
-                setNotifications([]);
-                setUnreadNotifications(0);
-                setPrescriptions([]);
-            }
-        });
-        return () => unsubscribe?.();
-    }
-  }, [auth, fetchProfile]);
 
   const setPharmacyStatus = async (isOpen: boolean) => {
     if (!auth?.currentUser || !firestore) {
