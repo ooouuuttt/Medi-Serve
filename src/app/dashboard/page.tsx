@@ -1,3 +1,4 @@
+
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,12 +13,20 @@ import { useDashboard } from "@/context/dashboard-context";
 
 export default function DashboardPage() {
   const { medicines, notifications } = useDashboard();
+
   const stockSummary = medicines.reduce((acc, med) => {
     if (med.quantity === 0) acc.outOfStock += 1;
     else if (med.quantity < med.lowStockThreshold) acc.lowStock += 1;
-    else acc.inStock += 1;
+    // The `inStock` property is handled below to count unique items
     return acc;
-  }, { inStock: 0, lowStock: 0, outOfStock: 0 });
+  }, { lowStock: 0, outOfStock: 0 });
+
+  // Create a Set of unique medicine identifiers (name + manufacturer) for items in stock
+  const inStockUniques = new Set(
+    medicines
+      .filter(med => med.quantity > 0)
+      .map(med => `${med.name}|${med.manufacturer}`)
+  );
 
   const newPrescriptions = prescriptions.filter(p => p.status === 'Pending');
   const unreadNotifications = notifications.filter(n => !n.isRead);
@@ -31,8 +40,8 @@ export default function DashboardPage() {
             <Package className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stockSummary.inStock}</div>
-            <p className="text-xs text-muted-foreground">Medicine types in stock</p>
+            <div className="text-2xl font-bold">{inStockUniques.size}</div>
+            <p className="text-xs text-muted-foreground">Unique medicine types in stock</p>
           </CardContent>
         </Card>
         <Card>
