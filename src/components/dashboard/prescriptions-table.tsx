@@ -121,7 +121,6 @@ export function PrescriptionsTable({ data }: { data: Prescription[] }) {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    // Check if the date is valid. If not, return the original string or a placeholder.
     if (isNaN(date.getTime())) {
       return "Invalid Date";
     }
@@ -181,7 +180,7 @@ export function PrescriptionsTable({ data }: { data: Prescription[] }) {
                         </DropdownMenuContent>
                       </DropdownMenu>
                        {selectedPrescription && (
-                        <DialogContent className="sm:max-w-md">
+                        <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
                             <DialogHeader>
                             <DialogTitle>Generate Patient Update</DialogTitle>
                             <DialogDescription>
