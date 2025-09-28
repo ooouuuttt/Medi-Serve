@@ -11,12 +11,14 @@ import {
   Bell,
   Pill,
   User,
+  ClipboardCheck,
 } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, section: "General" },
   { href: "/dashboard/stock", label: "Stock", icon: Package, section: "Pharmacy" },
   { href: "/dashboard/prescriptions", label: "Prescriptions", icon: ClipboardType, section: "Pharmacy" },
+  { href: "/dashboard/orders", label: "Orders", icon: ClipboardCheck, section: "Pharmacy" },
   { href: "/dashboard/analytics", label: "Analytics", icon: BarChart3, section: "Pharmacy" },
   { href: "/dashboard/notifications", label: "Notifications", icon: Bell, section: "General" },
   { href: "/dashboard/profile", label: "Profile", icon: User, section: "General" },

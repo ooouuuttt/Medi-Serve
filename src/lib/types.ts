@@ -24,9 +24,23 @@ export type Prescription = {
   status: "Pending" | "Ready for Pickup" | "Completed" | "Out of Stock";
 };
 
+export type Order = {
+  id: string;
+  customerName: string;
+  date: string;
+  items: {
+    medicineId: string;
+    name: string;
+    quantity: number;
+    price: number;
+  }[];
+  totalAmount: number;
+  status: "Pending" | "Processing" | "Ready for Pickup" | "Completed" | "Cancelled";
+}
+
 export type Notification = {
   id: string;
-  type: "low-stock" | "expiry" | "new-prescription";
+  type: "low-stock" | "expiry" | "new-prescription" | "new-order";
   message: string;
   date: string;
   isRead: boolean;
