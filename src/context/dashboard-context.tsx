@@ -32,7 +32,6 @@ type DashboardContextType = {
   setPharmacyStatus: (isOpen: boolean) => Promise<void>;
   prescriptions: Prescription[];
   setPrescriptions: React.Dispatch<React.SetStateAction<Prescription[]>>;
-  orders: Order[];
 };
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
@@ -46,7 +45,6 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   const [unreadNotifications, setUnreadNotifications] = useState(0);
   const [isNotificationsLoading, setIsNotificationsLoading] = useState(true);
   const [prescriptions, setPrescriptions] = useState<Prescription[]>([]);
-  const [orders, setOrders] = useState<Order[]>([]);
   
   const auth = useAuth();
   const firestore = useFirestore();
@@ -186,27 +184,6 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
           setPrescriptions(currentPrescriptions);
         });
   
-        const ordersCollectionRef = collection(firestore, "pharmacies", user.uid, "orders");
-        const unsubscribeOrders = onSnapshot(ordersCollectionRef, (querySnapshot) => {
-          const currentOrders = querySnapshot.docs.map(doc => {
-            const data = doc.data();
-            return { id: doc.id, ...data } as Order;
-          });
-  
-          querySnapshot.docChanges().forEach((change) => {
-            if (change.type === "added") {
-              const newOrder = { id: change.doc.id, ...change.doc.data() } as Order;
-              if (!orders.some(o => o.id === newOrder.id)) {
-                addNotification({
-                  type: 'new-order',
-                  message: `New order received from ${newOrder.customerName}.`
-                });
-              }
-            }
-          });
-          setOrders(currentOrders);
-        });
-  
         const notifCollectionRef = collection(firestore, "pharmacies", user.uid, "MediNotify");
         const unsubscribeNotifications = onSnapshot(notifCollectionRef, (querySnapshot) => {
           const notificationsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification))
@@ -218,7 +195,6 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
   
         return () => {
           unsubscribePrescriptions();
-          unsubscribeOrders();
           unsubscribeNotifications();
         };
       } else {
@@ -228,7 +204,6 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         setNotifications([]);
         setUnreadNotifications(0);
         setPrescriptions([]);
-        setOrders([]);
         setProfile(null);
       }
     });
@@ -323,7 +298,6 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
       markAllAsRead,
       prescriptions,
       setPrescriptions,
-      orders
     }}>
       {children}
     </DashboardContext.Provider>
