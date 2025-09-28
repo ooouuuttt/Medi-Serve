@@ -48,6 +48,7 @@ export default function ProfilePage() {
   const { toast } = useToast();
   const userAvatar = placeholderImages.placeholderImages.find(p => p.id === 'user-avatar');
   const auth = useAuth();
+  const firestore = useFirestore();
   const { profile, isProfileLoading, fetchProfile, setPharmacyStatus } = useDashboard();
 
 
@@ -73,14 +74,14 @@ export default function ProfilePage() {
 
 
   const onSubmit = async (data: ProfileFormValues) => {
-    if (!auth?.currentUser) {
-        toast({ variant: "destructive", title: "Error", description: "You are not logged in." });
+    if (!auth?.currentUser || !firestore) {
+        toast({ variant: "destructive", title: "Error", description: "You are not logged in or database is not available." });
         return;
     }
 
     setIsSubmitting(true);
     try {
-        const docRef = doc(useFirestore()!, "pharmacies", auth.currentUser.uid);
+        const docRef = doc(firestore, "pharmacies", auth.currentUser.uid);
         await setDoc(docRef, data, { merge: true });
         await fetchProfile(); // Refetch profile to update context
         setIsEditing(false);
