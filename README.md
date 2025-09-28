@@ -25,7 +25,6 @@ MediServe is a comprehensive, AI-powered pharmacy management solution built with
         - **Future Stock Predictions**: Forecast future demand to optimize inventory.
         - **Stock Optimization Suggestions**: Receive actionable advice to prevent stockouts and reduce waste.
     - Visualize sales data and future predictions with interactive charts.
-- **AI Symptom Checker**: A tool that allows users to input symptoms and receive preliminary, AI-generated information about potential conditions and next steps.
 - **Profile Management**:
     - View and edit your pharmacy profile details.
     - Set your pharmacy's status to 'Open' or 'Closed', which is visible across the dashboard.
