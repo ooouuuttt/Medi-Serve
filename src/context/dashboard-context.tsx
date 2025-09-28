@@ -4,7 +4,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Medicine, Notification, Prescription, Order } from '@/lib/types';
 import { useAuth, useFirestore } from '@/firebase';
-import { doc, getDoc, setDoc, collection, addDoc, getDocs, writeBatch, query, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc, getDocs, writeBatch, query, onSnapshot, Timestamp } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { differenceInDays } from 'date-fns';
 
@@ -191,18 +191,25 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
 
         const ordersCollectionRef = collection(firestore, "pharmacies", user.uid, "orders");
         const unsubscribeOrders = onSnapshot(ordersCollectionRef, (querySnapshot) => {
-          const currentOrders = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
-          setOrders(currentOrders);
+            const currentOrders = querySnapshot.docs.map(doc => {
+                const data = doc.data();
+                const createdAt = data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt;
+                return { id: doc.id, ...data, createdAt } as Order;
+            });
+            setOrders(currentOrders);
 
-          querySnapshot.docChanges().forEach((change) => {
-            if (change.type === "added") {
-              const newOrder = { id: change.doc.id, ...change.doc.data() } as Order;
-              addNotification({
-                type: 'new-order',
-                message: `New order received from ${newOrder.customerName}.`
-              });
-            }
-          });
+            querySnapshot.docChanges().forEach((change) => {
+                if (change.type === "added") {
+                    const newOrder = { id: change.doc.id, ...change.doc.data() } as Order;
+                    const isAlreadyPresent = orders.some(o => o.id === newOrder.id);
+                    if (!isAlreadyPresent) {
+                        addNotification({
+                            type: 'new-order',
+                            message: `New order received from ${newOrder.customerName}.`
+                        });
+                    }
+                }
+            });
         });
 
         const notifCollectionRef = collection(firestore, "pharmacies", user.uid, "MediNotify");

@@ -26,7 +26,7 @@ import { useAuth, useFirestore } from "@/firebase";
 import { doc, updateDoc } from "firebase/firestore";
 
 export function OrdersTable({ data }: { data: Order[] }) {
-  const { orders, addNotification } = useDashboard();
+  const { addNotification } = useDashboard();
   const auth = useAuth();
   const firestore = useFirestore();
 
@@ -57,9 +57,17 @@ export function OrdersTable({ data }: { data: Order[] }) {
     }
   };
   
-  const formatDate = (dateString: string) => {
-    if (!dateString) return "No date";
-    const date = new Date(dateString);
+  const formatDate = (timestamp: Order['createdAt']) => {
+    if (!timestamp) return "No date";
+    let date;
+    if (typeof timestamp === 'string') {
+        date = new Date(timestamp);
+    } else if (timestamp && typeof timestamp.seconds === 'number') {
+        date = new Date(timestamp.seconds * 1000);
+    } else {
+        return "Invalid Date";
+    }
+
     if (isNaN(date.getTime())) {
       return "Invalid Date";
     }
@@ -83,13 +91,13 @@ export function OrdersTable({ data }: { data: Order[] }) {
           <TableBody>
             {data.length ? (
               data.map((order) => (
-                <TableRow key={order.id} className="cursor-pointer">
+                <TableRow key={order.id}>
                   <TableCell className="font-medium">{order.customerName}</TableCell>
-                  <TableCell>{formatDate(order.date)}</TableCell>
+                  <TableCell>{formatDate(order.createdAt)}</TableCell>
                   <TableCell>{getStatusBadge(order.status)}</TableCell>
-                  <TableCell>{order.items.map(i => `${i.name} (x${i.quantity})`).join(', ')}</TableCell>
-                  <TableCell>₹{order.totalAmount.toFixed(2)}</TableCell>
-                  <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                  <TableCell>{order.items.map(i => `${i.medicine.name} (x${i.quantity})`).join(', ')}</TableCell>
+                  <TableCell>₹{order.total.toFixed(2)}</TableCell>
+                  <TableCell className="text-right">
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="h-8 w-8 p-0">

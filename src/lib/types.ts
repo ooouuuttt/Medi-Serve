@@ -27,14 +27,19 @@ export type Prescription = {
 export type Order = {
   id: string;
   customerName: string;
-  date: string;
+  createdAt: {
+    seconds: number;
+    nanoseconds: number;
+  } | string;
   items: {
-    medicineId: string;
-    name: string;
+    medicine: {
+      id: string;
+      name: string;
+      price: number;
+    };
     quantity: number;
-    price: number;
   }[];
-  totalAmount: number;
+  total: number;
   status: "Pending" | "Processing" | "Ready for Pickup" | "Completed" | "Cancelled";
 }
 
