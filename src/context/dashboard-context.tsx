@@ -163,70 +163,66 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (!auth || !firestore) return;
-
+  
     const unsubscribeAuth = auth.onAuthStateChanged(user => {
       if (user) {
         fetchAllData(user.uid);
-
+  
         const presCollectionRef = collection(firestore, "pharmacies", user.uid, "MediPrescription");
         const unsubscribePrescriptions = onSnapshot(presCollectionRef, (querySnapshot) => {
-            const currentPrescriptions = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prescription));
-            
-            setPrescriptions(prevPrescriptions => {
-              querySnapshot.docChanges().forEach((change) => {
-                if (change.type === "added") {
-                  const newPrescription = { id: change.doc.id, ...change.doc.data() } as Prescription;
-                  const isAlreadyPresent = prevPrescriptions.some(p => p.id === newPrescription.id);
-                  if (!isAlreadyPresent) {
-                      addNotification({
-                          type: 'new-prescription',
-                          message: `New prescription received from ${newPrescription.patientName}.`
-                      });
-                  }
-                }
-              });
-              return currentPrescriptions;
-            });
+          const currentPrescriptions = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Prescription));
+  
+          querySnapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+              const newPrescription = { id: change.doc.id, ...change.doc.data() } as Prescription;
+              if (!prescriptions.some(p => p.id === newPrescription.id)) {
+                addNotification({
+                  type: 'new-prescription',
+                  message: `New prescription received from ${newPrescription.patientName}.`
+                });
+              }
+            }
+          });
+          setPrescriptions(currentPrescriptions);
         });
-
+  
         const ordersCollectionRef = collection(firestore, "pharmacies", user.uid, "orders");
         const unsubscribeOrders = onSnapshot(ordersCollectionRef, (querySnapshot) => {
-            const currentOrders = querySnapshot.docs.map(doc => {
-                const data = doc.data();
-                const createdAt = data.createdAt instanceof Timestamp ? data.createdAt.toDate().toISOString() : data.createdAt;
-                return { id: doc.id, ...data, createdAt } as Order;
-            });
-            setOrders(currentOrders);
-
-            querySnapshot.docChanges().forEach((change) => {
-                if (change.type === "added") {
-                    const newOrder = { id: change.doc.id, ...change.doc.data() } as Order;
-                    const isAlreadyPresent = orders.some(o => o.id === newOrder.id);
-                    if (!isAlreadyPresent) {
-                        addNotification({
-                            type: 'new-order',
-                            message: `New order received from ${newOrder.customerName}.`
-                        });
-                    }
-                }
-            });
+          const currentOrders = querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            return { id: doc.id, ...data } as Order;
+          });
+  
+          querySnapshot.docChanges().forEach((change) => {
+            if (change.type === "added") {
+              const newOrder = { id: change.doc.id, ...change.doc.data() } as Order;
+              if (!orders.some(o => o.id === newOrder.id)) {
+                addNotification({
+                  type: 'new-order',
+                  message: `New order received from ${newOrder.customerName}.`
+                });
+              }
+            }
+          });
+          setOrders(currentOrders);
         });
-
+  
         const notifCollectionRef = collection(firestore, "pharmacies", user.uid, "MediNotify");
         const unsubscribeNotifications = onSnapshot(notifCollectionRef, (querySnapshot) => {
-            const notificationsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification))
-                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-            
-            setNotifications(notificationsList);
-            setUnreadNotifications(notificationsList.filter(n => !n.isRead).length);
+          const notificationsList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Notification))
+            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+  
+          setNotifications(notificationsList);
+          setUnreadNotifications(notificationsList.filter(n => !n.isRead).length);
         });
-
+  
         return () => {
           unsubscribePrescriptions();
           unsubscribeOrders();
           unsubscribeNotifications();
-        }
+        };
       } else {
+        // User is signed out
         setIsProfileLoading(false);
         setMedicines([]);
         setNotifications([]);
@@ -236,10 +232,10 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
         setProfile(null);
       }
     });
-
+  
     return () => unsubscribeAuth();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auth, firestore]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth, firestore, addNotification]);
 
 
   const addMedicine = async (newMedicine: Omit<Medicine, 'id'>) => {
