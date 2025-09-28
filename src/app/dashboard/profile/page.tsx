@@ -37,6 +37,7 @@ const profileSchema = z.object({
   email: z.string().email(),
   location: z.string().optional(),
   timings: z.string().optional(),
+  contactNumber: z.string().optional(),
   isOpen: z.boolean().default(true),
 });
 
@@ -60,6 +61,7 @@ export default function ProfilePage() {
       email: "",
       location: "",
       timings: "",
+      contactNumber: "",
       isOpen: true,
     },
   });
@@ -218,19 +220,34 @@ export default function ProfilePage() {
                   )}
                 />
               </div>
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                       {isProfileLoading ? <Skeleton className="h-10" /> : <Input {...field} disabled />}
-                    </FormControl>
-                     <FormMessage />
-                  </FormItem>
-                )}
-              />
+                <div className="grid md:grid-cols-2 gap-4">
+                 <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                         {isProfileLoading ? <Skeleton className="h-10" /> : <Input {...field} disabled />}
+                      </FormControl>
+                       <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                 <FormField
+                  control={form.control}
+                  name="contactNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Contact Number</FormLabel>
+                      <FormControl>
+                        {isProfileLoading ? <Skeleton className="h-10" /> : <Input placeholder="e.g., +91 1234567890" {...field} disabled={!isEditing} />}
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
                <div className="grid md:grid-cols-2 gap-4">
                  <FormField
                   control={form.control}

@@ -19,6 +19,10 @@
           "format": "email",
           "description": "The contact email for the pharmacy."
         },
+        "contactNumber": {
+            "type": "string",
+            "description": "The contact phone number for the pharmacy."
+        },
         "licenseCertificateUrl": {
             "type": "string",
             "format": "uri",
