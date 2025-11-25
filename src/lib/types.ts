@@ -1,6 +1,7 @@
 
 
 
+
 export type Medicine = {
   id: string;
   name: string;
@@ -38,6 +39,7 @@ export type Order = {
   }[];
   total: number;
   status: "Pending" | "Processing" | "Ready for Pickup" | "Completed" | "Cancelled";
+  pharmacyId: string;
 };
 
 export type Notification = {

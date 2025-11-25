@@ -4,7 +4,7 @@
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Medicine, Notification, Prescription, Order } from '@/lib/types';
 import { useAuth, useFirestore } from '@/firebase';
-import { doc, getDoc, setDoc, collection, addDoc, getDocs, writeBatch, query, onSnapshot, Timestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, collection, addDoc, getDocs, writeBatch, query, onSnapshot, Timestamp, where } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { differenceInDays } from 'date-fns';
 
@@ -14,6 +14,7 @@ type Profile = {
   email: string;
   location?: string;
   timings?: string;
+  contactNumber?: string;
   isOpen: boolean;
 }
 
@@ -186,8 +187,8 @@ export const DashboardProvider = ({ children }: { children: ReactNode }) => {
           setPrescriptions(currentPrescriptions);
         });
 
-        const ordersCollectionRef = collection(firestore, "pharmacies", user.uid, "orders");
-        const unsubscribeOrders = onSnapshot(ordersCollectionRef, (querySnapshot) => {
+        const ordersQuery = query(collection(firestore, "orders"), where("pharmacyId", "==", user.uid));
+        const unsubscribeOrders = onSnapshot(ordersQuery, (querySnapshot) => {
             const ordersList = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
             ordersList.sort((a, b) => new Date(b.createdAt as string).getTime() - new Date(a.createdAt as string).getTime());
             setOrders(ordersList);
@@ -333,5 +334,3 @@ export const useDashboard = () => {
   }
   return context;
 };
-
-    

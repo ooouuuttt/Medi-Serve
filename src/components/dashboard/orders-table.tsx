@@ -34,7 +34,7 @@ export function OrdersTable({ data }: { data: Order[] }) {
   const handleStatusChange = async (id: string, status: Order["status"]) => {
     if (!auth?.currentUser || !firestore) return;
 
-    const orderDocRef = doc(firestore, "pharmacies", auth.currentUser.uid, "orders", id);
+    const orderDocRef = doc(firestore, "orders", id);
     await updateDoc(orderDocRef, { status });
 
     // Note: The context will update the state via the onSnapshot listener.
