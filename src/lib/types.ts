@@ -1,5 +1,6 @@
 
 
+
 export type Medicine = {
   id: string;
   name: string;
@@ -31,11 +32,8 @@ export type Order = {
   customerName: string;
   createdAt: { seconds: number; nanoseconds: number } | string;
   items: {
-    medicine: {
-      id: string;
-      name: string;
-      price: number;
-    };
+    medicineId: string;
+    name: string;
     quantity: number;
   }[];
   total: number;
@@ -104,3 +102,5 @@ export type PatientRecord = {
     date: string;
   }[];
 };
+
+    

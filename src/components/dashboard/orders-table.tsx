@@ -34,13 +34,10 @@ export function OrdersTable({ data }: { data: Order[] }) {
   const handleStatusChange = async (id: string, status: Order["status"]) => {
     if (!auth?.currentUser || !firestore) return;
 
-    // This is causing an error because we are using dummy data.
-    // The document 'order1' doesn't exist in the database.
-    // const orderDocRef = doc(firestore, "pharmacies", auth.currentUser.uid, "orders", id);
-    // await updateDoc(orderDocRef, { status });
+    const orderDocRef = doc(firestore, "pharmacies", auth.currentUser.uid, "orders", id);
+    await updateDoc(orderDocRef, { status });
 
     // Note: The context will update the state via the onSnapshot listener.
-    // Optional: Add a local state update for instant UI feedback if needed.
   };
 
   const getStatusBadge = (status: Order["status"]) => {
@@ -98,7 +95,7 @@ export function OrdersTable({ data }: { data: Order[] }) {
                   <TableCell className="font-medium">{order.customerName}</TableCell>
                   <TableCell>{formatDate(order.createdAt)}</TableCell>
                   <TableCell>{getStatusBadge(order.status)}</TableCell>
-                  <TableCell>{order.items.map(i => `${i.medicine.name} (x${i.quantity})`).join(', ')}</TableCell>
+                  <TableCell>{order.items.map(i => `${i.name} (x${i.quantity})`).join(', ')}</TableCell>
                   <TableCell>₹{order.total.toFixed(2)}</TableCell>
                   <TableCell className="text-right">
                     <DropdownMenu>
@@ -141,3 +138,5 @@ export function OrdersTable({ data }: { data: Order[] }) {
     </div>
   );
 }
+
+    

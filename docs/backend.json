@@ -100,7 +100,7 @@
         "properties": {
             "type": {
                 "type": "string",
-                "enum": ["low-stock", "expiry", "new-prescription"],
+                "enum": ["low-stock", "expiry", "new-prescription", "new-order"],
                 "description": "The type of the notification."
             },
             "message": {
@@ -169,6 +169,53 @@
         }
       },
       "required": ["patientName", "doctorName", "date", "medicines", "status"]
+    },
+    "OrderItem": {
+      "title": "Order Item",
+      "description": "Represents an order in the orders collection.",
+      "type": "object",
+      "properties": {
+        "customerName": {
+            "type": "string",
+            "description": "The name of the customer."
+        },
+        "createdAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "The date the order was created."
+        },
+        "items": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "medicineId": {
+                        "type": "string",
+                        "description": "The ID of the medicine."
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "The name of the medicine."
+                    },
+                    "quantity": {
+                        "type": "number",
+                        "description": "The quantity ordered."
+                    }
+                },
+                "required": ["medicineId", "name", "quantity"]
+            }
+        },
+        "total": {
+            "type": "number",
+            "description": "The total cost of the order."
+        },
+        "status": {
+            "type": "string",
+            "enum": ["Pending", "Processing", "Ready for Pickup", "Completed", "Cancelled"],
+            "description": "The status of the order."
+        }
+      },
+      "required": ["customerName", "createdAt", "items", "total", "status"]
     }
   },
   "auth": {
@@ -198,6 +245,14 @@
         "$ref": "#/entities/MediPrescriptionItem"
       },
       "description": "Stores prescription details for a specific pharmacy."
+    },
+    "/pharmacies/{pharmacyId}/orders/{orderId}": {
+      "schema": {
+        "$ref": "#/entities/OrderItem"
+      },
+      "description": "Stores order details for a specific pharmacy."
     }
   }
 }
+
+    
